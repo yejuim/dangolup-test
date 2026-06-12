@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>단골UP 현장 테스트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+  :root {
+    /* NHN Design System tokens */
+    --font-sans:     "Pretendard", sans-serif;
+    /* NHN brand */
+    --nhn-black:     #191919;
+    --nhn-blue:      #0F80F6;
+    --nhn-red:       #EB453D;
+    --nhn-green:     #01A058;
+    /* Ink scale */
+    --ink:           #191919;
+    --ink-2:         #2e2e2e;
+    --ink-3:         #545454;
+    --ink-4:         #767676;
+    --ink-5:         #a1a1a1;
+    --ink-6:         #c8c8c8;
+    /* Surface / Line */
+    --surface:       #ffffff;
+    --surface-1:     #f7f7f7;
+    --surface-2:     #efefef;
+    --line:          #191919;
+    --line-soft:     #e3e3e3;
+    --line-softer:   #ededed;
+    /* Semantic */
+    --accent:        #0F80F6;
+    --danger:        #EB453D;
+    --success:       #01A058;
+    --fail:          #EB453D;
+    /* Aliases for layout compat */
+    --black:         #191919;
+    --white:         #ffffff;
+    --canvas:        #ffffff;
+    --card-bg:       #ffffff;
+    --card-hover:    #f7f7f7;
+    --text:          #191919;
+    --meta:          #545454;
+    --caption:       #767676;
+    --border:        #e3e3e3;
+    --border-subtle: #ededed;
+    --r-card:        8px;
+    --r-pill:        50px;
+    --r-circle:      50%;
+    --shadow-card:   0 0 0 1px var(--line-soft);
+    --shadow-hover:  0 2px 8px rgba(25,25,25,0.10), 0 0 0 1px #d0d0d0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11", "tnum";
+  }
+  #page-store-select, #mainApp { max-width: 480px; margin: 0 auto; }
+
+  /* ── STORE SELECT ── */
+  #page-store-select { min-height: 100vh; background: var(--canvas); }
+  .store-select-header {
+    background: var(--black); padding: 36px 20px 28px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .store-select-logo { }
+  .store-select-logo h1 {
+    font-size: 22px; font-weight: 700; color: var(--white);
+    letter-spacing: -0.03em; line-height: 1.2;
+  }
+  .store-select-logo p { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 5px; letter-spacing: -0.01em; }
+  .header-date { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.55); white-space: nowrap; padding-top: 4px; }
+  .store-select-body { padding: 16px 0 64px; }
+  .store-btn {
+    width: 100%; padding: 16px 14px 16px 20px; background: var(--card-bg);
+    border: none; border-radius: 0; margin-bottom: 0;
+    text-align: left; cursor: pointer;
+    border-bottom: 1px solid var(--line-softer);
+    display: flex; align-items: center; gap: 12px;
+    transition: background 120ms ease;
+    box-sizing: border-box;
+  }
+  .store-btn:hover, .store-btn:active { background: var(--card-hover); }
+  .store-btn-content { flex: 1; min-width: 0; }
+  .store-btn-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; letter-spacing: -0.02em; }
+  .store-btn-location { font-size: 12px; color: var(--ink-4); margin-bottom: 8px; letter-spacing: -0.01em; }
+  .store-btn-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+  .store-btn-chevron {
+    font-size: 18px; color: var(--ink-6); flex-shrink: 0;
+    line-height: 1; margin-top: 1px;
+  }
+  /* store tags — glass black on white card */
+  .store-tag { font-size: 11px; padding: 3px 9px; border-radius: var(--r-pill); font-weight: 500; background: rgba(0,0,0,0.07); color: var(--meta); }
+  .tag-stamp        { color: var(--nhn-green); background: rgba(1,160,88,0.10); }
+  .tag-point        { color: var(--nhn-blue); background: rgba(15,128,246,0.10); }
+  .tag-nomembership { color: var(--caption); background: rgba(0,0,0,0.06); }
+  .tag-type, .tag-order { color: var(--meta); background: rgba(0,0,0,0.07); }
+
+  /* ── NAV ── */
+  .nav {
+    background: var(--black); color: var(--white);
+    padding: 0 16px; height: 52px;
+    display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-back {
+    background: none; border: none; color: var(--white);
+    font-size: 22px; font-weight: 300; cursor: pointer; padding: 0 10px 0 0;
+    line-height: 1; transition: opacity 120ms; opacity: 0.85;
+    display: flex; align-items: center;
+  }
+  .nav-back:hover { opacity: 1; }
+  .nav h1 { font-size: 17px; font-weight: 700; color: var(--white); letter-spacing: -0.03em; }
+
+  /* ── TABS — pill segmented control ── */
+  .tabs { background: var(--black); padding: 8px 12px 10px; display: flex; gap: 4px; }
+  .tab {
+    flex: 1; padding: 7px 6px; text-align: center;
+    color: rgba(255,255,255,0.45); font-size: 12px; font-weight: 500;
+    cursor: pointer; border: none; background: transparent;
+    border-radius: var(--r-pill); transition: color 120ms, background 120ms;
+    letter-spacing: -0.01em;
+  }
+  .tab:hover { color: rgba(255,255,255,0.75); }
+  .tab.active {
+    color: var(--white); background: var(--nhn-blue); font-weight: 700;
+  }
+
+  /* ── STORE BAR ── */
+  .store-selected-bar {
+    background: var(--black); padding: 8px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .store-selected-bar span { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.90); letter-spacing: -0.02em; }
+  .store-change-btn {
+    font-size: 12px; color: rgba(255,255,255,0.75);
+    background: rgba(255,255,255,0.15); border: none;
+    border-radius: var(--r-pill); padding: 4px 12px; cursor: pointer;
+    transition: background 120ms, color 120ms; font-weight: 500;
+  }
+  .store-change-btn:hover { background: rgba(255,255,255,0.25); color: var(--white); }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 14px; padding-bottom: 80px; }
+  .page.active { display: block; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card-bg); border-radius: var(--r-card);
+    padding: 16px; margin-bottom: 10px;
+    box-shadow: var(--shadow-card); border: none;
+  }
+  .card-title { font-size: 11px; font-weight: 600; color: var(--caption); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ── SCENARIO LIST ── */
+  .scenario-group-title {
+    font-size: 11px; font-weight: 600; color: var(--caption);
+    text-transform: uppercase; letter-spacing: 0.06em; margin: 24px 2px 8px;
+  }
+  .scenario-item {
+    border: none; border-radius: var(--r-card); padding: 14px; margin-bottom: 8px;
+    background: var(--card-bg); cursor: pointer;
+    box-shadow: var(--shadow-card);
+    transition: background 120ms, box-shadow 120ms;
+  }
+  .scenario-item:hover { background: var(--card-hover); box-shadow: var(--shadow-hover); }
+  .scenario-item.pass { border-left: 3px solid var(--nhn-green); }
+  .scenario-item.fail { border-left: 3px solid var(--nhn-red); }
+  .scenario-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; gap: 6px; }
+  /* scenario ID — glass black pill */
+  .scenario-id {
+    font-size: 11px; font-weight: 700; color: var(--meta);
+    background: rgba(0,0,0,0.07); padding: 2px 8px;
+    border-radius: var(--r-pill); white-space: nowrap;
+  }
+  /* badges — glass black base; category overrides keep color as "content" */
+  .badge {
+    font-size: 11px; padding: 2px 9px; border-radius: var(--r-pill);
+    font-weight: 500; white-space: nowrap; border: none;
+    background: rgba(0,0,0,0.07); color: var(--meta);
+  }
+  .badge-단골맺기{ background: rgba(234,88,12,0.10);      color: #c2410c; }
+  .badge-공통    { background: rgba(0,0,0,0.07);         color: #555555; }
+  .badge-멤버십  { background: rgba(1,160,88,0.10);   color: var(--nhn-green); }
+  .badge-주문    { background: rgba(15,128,246,0.10);     color: var(--nhn-blue); }
+  .badge-쿠폰    { background: rgba(217,119,6,0.10);     color: #b45309; }
+  .badge-이용내역{ background: rgba(124,58,237,0.10);    color: #6d28d9; }
+  .badge-취소    { background: rgba(235,69,61,0.09);      color: var(--nhn-red); }
+  .badge-pass    { background: rgba(1,160,88,0.10);       color: var(--nhn-green); }
+  .badge-fail    { background: rgba(229,0,15,0.08);      color: #b91c1c; }
+  .badge-na      { background: rgba(0,0,0,0.06);         color: var(--ink-4); }
+  .scenario-item.na { border-left: 3px solid var(--ink-6); opacity: 0.6; }
+  .status-dot.na { background: var(--ink-6); }
+  .scenario-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; line-height: 1.4; color: var(--text); letter-spacing: -0.02em; }
+  .scenario-pre  { font-size: 12px; color: var(--caption); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.15); flex-shrink: 0; }
+  .status-dot.pass { background: var(--nhn-green); }
+  .status-dot.fail { background: var(--nhn-red); }
+
+  /* ── PROGRESS ── */
+  .progress-bar { height: 3px; background: rgba(0,0,0,0.10); border-radius: 999px; margin-top: 14px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--nhn-blue); border-radius: 999px; transition: width 0.3s ease; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 0; }
+  .stat-card { background: rgba(0,0,0,0.04); border-radius: var(--r-card); padding: 14px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 700; letter-spacing: -0.05em; }
+  .stat-num.green { color: var(--nhn-green); }
+  .stat-num.red   { color: var(--nhn-red); }
+  .stat-num.blue  { color: var(--black); }
+  .stat-label { font-size: 11px; color: var(--caption); margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ── DETAIL ── */
+  .detail-section { margin-bottom: 18px; }
+  .detail-label { font-size: 11px; font-weight: 600; color: var(--caption); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .step-list { list-style: none; }
+  .step-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 14px; align-items: flex-start; color: var(--meta); letter-spacing: -0.01em; }
+  .step-list li:last-child { border-bottom: none; }
+  .step-num {
+    font-size: 11px; font-weight: 700; color: var(--white);
+    background: var(--nhn-black); width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-link { color: var(--black); text-decoration: underline; font-size: 13px; word-break: break-all; font-weight: 500; }
+  .expected-box {
+    background: rgba(1,160,88,0.07);  border-radius: var(--r-card);
+    padding: 12px; font-size: 13px; color: var(--nhn-green); line-height: 1.7;
+    border: 1px solid rgba(1,160,88,0.20);
+  }
+  .precond-box {
+    background: rgba(0,0,0,0.04); border-radius: var(--r-card);
+    padding: 12px; font-size: 13px; color: var(--meta); line-height: 1.7;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  /* ── PASS / FAIL BUTTONS — pill ── */
+  .pf-row { display: flex; gap: 8px; margin-top: 8px; }
+  .pf-btn {
+    flex: 1; padding: 13px; border-radius: var(--r-pill);
+    border: 1.5px solid rgba(0,0,0,0.15); background: rgba(0,0,0,0.04);
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 120ms; color: var(--meta); letter-spacing: -0.01em;
+  }
+  .pf-btn:hover { border-color: rgba(0,0,0,0.35); color: var(--text); }
+  .pf-btn.pass-btn.selected { background: rgba(1,160,88,0.09);  color: var(--nhn-green); border-color: var(--nhn-green); }
+  .pf-btn.fail-btn.selected { background: rgba(235,69,61,0.08); color: var(--nhn-red);   border-color: var(--nhn-red); }
+  .na-btn {
+    width: 100%; padding: 14px; background: transparent; color: var(--ink-4);
+    border: 1.5px solid rgba(0,0,0,0.15); border-radius: 12px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    letter-spacing: -0.02em; transition: all 120ms; box-sizing: border-box;
+  }
+  .na-btn:hover { background: rgba(0,0,0,0.04); color: var(--ink-3); }
+
+  textarea {
+    width: 100%; border: 1px solid rgba(0,0,0,0.12);
+    border-radius: var(--r-card); padding: 10px 12px;
+    font-size: 14px; font-family: inherit; resize: vertical; min-height: 80px;
+    color: var(--text); background: #ffffff; letter-spacing: -0.01em;
+  }
+  textarea:focus { outline: 2px dashed rgba(0,0,0,0.25); outline-offset: 0; border-color: transparent; }
+  input[type="text"] {
+    width: 100%; border: 1px solid rgba(0,0,0,0.12);
+    border-radius: var(--r-card); padding: 10px 12px;
+    font-size: 14px; font-family: inherit; color: var(--text);
+    background: #ffffff; letter-spacing: -0.01em;
+  }
+  input[type="text"]:read-only { color: var(--caption); background: rgba(0,0,0,0.04); }
+  input:focus { outline: 2px dashed rgba(0,0,0,0.25); outline-offset: 0; border-color: transparent; }
+
+  /* ── BUTTONS — pill geometry ── */
+  .save-btn {
+    width: 100%; padding: 14px; background: var(--black); color: var(--white);
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; letter-spacing: -0.02em; transition: opacity 120ms;
+    box-sizing: border-box;
+  }
+  .save-btn:hover { opacity: 0.80; }
+  .submit-btn {
+    width: 100%; padding: 14px; background: var(--black); color: var(--white);
+    border: none; border-radius: var(--r-pill); font-size: 15px; font-weight: 700;
+    cursor: pointer; margin-top: 16px; letter-spacing: -0.02em; transition: opacity 120ms;
+  }
+  .submit-btn:hover { opacity: 0.80; }
+  .export-btn {
+    width: 100%; padding: 13px; background: var(--nhn-blue); color: var(--white);
+    border: none; border-radius: var(--r-pill); font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-bottom: 8px; transition: opacity 120ms; letter-spacing: -0.02em;
+  }
+  .export-btn:hover { opacity: 0.75; }
+  .reset-btn {
+    width: 100%; padding: 12px; background: transparent; color: var(--caption);
+    border: 1.5px solid rgba(0,0,0,0.15); border-radius: var(--r-pill);
+    font-size: 14px; font-weight: 500; cursor: pointer; letter-spacing: -0.01em;
+    transition: color 120ms, border-color 120ms;
+  }
+  .reset-btn:hover { color: var(--black); border-color: rgba(0,0,0,0.45); }
+
+  /* ── FORM ── */
+  .form-section-title { font-size: 11px; font-weight: 600; color: var(--caption); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 2px; margin: 28px 0 12px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block; color: var(--text); letter-spacing: -0.02em; }
+  .radio-group, .check-group { display: flex; flex-direction: column; gap: 5px; }
+  .radio-opt, .check-opt {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+    border: 1px solid rgba(0,0,0,0.10); border-radius: var(--r-card);
+    cursor: pointer; background: var(--card-bg); color: var(--meta);
+    transition: background 120ms, border-color 120ms;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .radio-opt:hover, .check-opt:hover { background: var(--card-hover); border-color: rgba(0,0,0,0.25); }
+  .radio-opt input, .check-opt input { width: 17px; height: 17px; accent-color: var(--black); flex-shrink: 0; }
+  .scale-group { display: flex; gap: 4px; }
+  .scale-btn {
+    flex: 1; padding: 10px 4px; border: 1px solid rgba(0,0,0,0.12);
+    border-radius: var(--r-card); text-align: center; font-size: 14px;
+    font-weight: 600; cursor: pointer; background: var(--card-bg); color: var(--meta);
+    transition: all 120ms;
+  }
+  .scale-btn:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+  .scale-btn.selected { background: var(--nhn-blue); color: var(--white); border-color: var(--nhn-blue); }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--caption); margin-top: 6px; }
+
+  /* ── RESULT ── */
+  .result-item { border: none; border-radius: var(--r-card); padding: 12px; margin-bottom: 8px; background: var(--card-bg); box-shadow: var(--shadow-card); }
+  .result-item.pass { border-left: 3px solid var(--nhn-green); }
+  .result-item.fail { border-left: 3px solid var(--nhn-red); }
+  .result-name { font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
+  .result-note { font-size: 12px; color: var(--caption); margin-top: 4px; }
+
+  /* ── SIGNUP ── */
+  #page-signup { min-height: 100vh; background: var(--canvas); max-width: 480px; margin: 0 auto; }
+  .signup-section-title {
+    font-size: 11px; font-weight: 600; color: var(--ink-4);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 16px 20px 8px;
+  }
+  .slot-btn {
+    width: 100%; padding: 16px 14px 16px 20px; background: var(--white);
+    border: none; border-bottom: 1px solid var(--line-softer);
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: background 120ms; box-sizing: border-box;
+    text-align: left;
+  }
+  .slot-btn:hover { background: var(--card-hover); }
+  .slot-btn.full { opacity: 0.45; pointer-events: none; }
+  .slot-btn-content { flex: 1; min-width: 0; }
+  .slot-btn-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; letter-spacing: -0.02em; }
+  .slot-btn-location { font-size: 12px; color: var(--ink-4); margin-bottom: 8px; }
+  .slot-btn-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .slot-count {
+    font-size: 12px; font-weight: 600; color: var(--nhn-blue);
+    background: rgba(15,128,246,0.10); padding: 3px 10px; border-radius: var(--r-pill);
+  }
+  .slot-count.full { color: var(--ink-4); background: rgba(0,0,0,0.06); }
+  .slot-done-badge {
+    font-size: 12px; font-weight: 700; color: #7c3aed;
+    background: rgba(124,58,237,0.10); padding: 3px 10px; border-radius: var(--r-pill);
+  }
+  .slot-btn.my-slot { background: rgba(124,58,237,0.04); pointer-events: none; }
+  .slot-members { font-size: 11px; color: var(--ink-4); }
+  .slot-chevron { font-size: 18px; color: var(--ink-6); flex-shrink: 0; }
+
+  /* 신청 모달 */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: var(--white); border-radius: 20px 20px 0 0;
+    padding: 24px 20px 40px; width: 100%; max-width: 480px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.03em; }
+  .modal-sub { font-size: 13px; color: var(--ink-4); margin-bottom: 20px; }
+  .modal-input {
+    width: 100%; padding: 13px 14px; border: 1.5px solid var(--line-soft);
+    border-radius: 12px; font-size: 15px; font-family: inherit;
+    background: #fff; box-sizing: border-box; margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .modal-input:focus { outline: none; border-color: var(--nhn-blue); }
+  .modal-confirm {
+    width: 100%; padding: 14px; background: var(--black); color: var(--white);
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: -0.02em; margin-bottom: 8px;
+  }
+  .modal-cancel {
+    width: 100%; padding: 14px; background: transparent; color: var(--ink-4);
+    border: none; font-size: 14px; font-weight: 600; cursor: pointer;
+    letter-spacing: -0.02em;
+  }
+  .member-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .member-chip {
+    font-size: 12px; font-weight: 500; padding: 4px 10px;
+    background: rgba(0,0,0,0.06); border-radius: var(--r-pill);
+    color: var(--ink-3);
+  }
+
+  .hidden { display: none !important; }
+  .skip-notice { font-size: 13px; color: var(--caption); padding: 24px 0; text-align: center; letter-spacing: -0.01em; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--black); color: var(--white);
+    padding: 10px 22px; border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
+    opacity: 0; transition: opacity 0.22s; pointer-events: none; z-index: 999; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ══ 진입 선택 ══ -->
+<div id="page-entry" style="max-width:480px;margin:0 auto;min-height:100vh;background:#fff;">
+  <div class="store-select-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div class="store-select-logo">
+      <h1>단골UP 현장 테스트</h1>
+      <p>모드를 선택해 주세요</p>
+    </div>
+    <span class="header-date"></span>
+  </div>
+  <div style="padding:24px 20px;display:flex;flex-direction:column;gap:12px;">
+    <button onclick="showEntryPage('signup')" style="width:100%;padding:20px;background:#fff;border:1px solid var(--line-soft);border-radius:12px;text-align:left;cursor:pointer;transition:background 120ms;" onmouseover="this.style.background='#f7f7f7'" onmouseout="this.style.background='#fff'">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:-0.03em;">📋 팀 신청</div>
+      <div style="font-size:13px;color:var(--ink-4);">참여할 매장 슬롯을 신청해요</div>
+    </button>
+    <button onclick="showEntryPage('store-select');initStoreSelect();" style="width:100%;padding:20px;background:#fff;border:1px solid var(--line-soft);border-radius:12px;text-align:left;cursor:pointer;transition:background 120ms;" onmouseover="this.style.background='#f7f7f7'" onmouseout="this.style.background='#fff'">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:-0.03em;">🧪 테스트 진행</div>
+      <div style="font-size:13px;color:var(--ink-4);">시나리오 테스트 및 결과 기록</div>
+    </button>
+  </div>
+</div>
+
+<!-- ══ 팀 신청 ══ -->
+<div id="page-signup" style="display:none;">
+  <div class="store-select-header" style="display:flex;align-items:center;gap:10px;">
+    <button onclick="showEntryPage('entry')" style="background:none;border:none;color:rgba(255,255,255,0.85);font-size:22px;font-weight:300;cursor:pointer;padding:0 8px 0 0;line-height:1;flex-shrink:0;">&#8249;</button>
+    <div class="store-select-logo" style="flex:1;">
+      <h1>팀 신청</h1>
+      <p>참여할 매장 슬롯을 선택해 주세요</p>
+    </div>
+    <span class="header-date"></span>
+  </div>
+  <div style="padding:16px 20px 0;">
+    <div style="background:rgba(15,128,246,0.06);border:1px solid rgba(15,128,246,0.18);border-radius:12px;padding:16px 18px;">
+      <div style="font-size:15px;font-weight:700;color:var(--nhn-blue);margin-bottom:10px;letter-spacing:-0.02em;">테스트 참여 감사합니다 🙏</div>
+      <div style="font-size:13px;color:var(--ink-3);line-height:1.8;letter-spacing:-0.01em;">
+        오늘 방문할 매장을 아래에서 신청해 주세요.<br>
+        <strong>같이 가는 팀 중 대표 1명만</strong> 신청하면 되고, <strong>하루 최대 2곳</strong>까지 신청 가능해요.<br><br>
+        이미 신청 인원이 있는 매장은 <strong>중복 신청을 피해</strong> 주세요 😊
+      </div>
+    </div>
+  </div>
+  <div id="signupList"></div>
+</div>
+
+<!-- 신청 모달 -->
+<div class="modal-overlay" id="signupModal">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modalStoreName"></div>
+    <div class="modal-sub" id="modalStoreSub"></div>
+    <input class="modal-input" id="modalTeamInput" placeholder="소속/팀 (예: 페이코/비즈그로스팀)" maxlength="30">
+    <button class="modal-confirm" onclick="confirmSignup()">신청하기</button>
+    <button class="modal-cancel" onclick="closeModal()">취소</button>
+  </div>
+</div>
+
+<!-- ══ 매장 선택 ══ -->
+<div id="page-store-select" style="display:none;">
+  <div class="store-select-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div style="display:flex;align-items:flex-start;gap:4px;">
+      <button onclick="showEntryPage('entry')" style="background:none;border:none;color:rgba(255,255,255,0.85);font-size:28px;font-weight:300;cursor:pointer;padding:0 6px 0 0;line-height:1;flex-shrink:0;margin-top:2px;">&#8249;</button>
+      <div class="store-select-logo">
+        <h1>단골UP 현장 테스트</h1>
+        <p>테스트할 매장을 선택해 주세요</p>
+      </div>
+    </div>
+    <span class="header-date"></span>
+  </div>
+  <div style="padding:16px 20px 0;">
+    <div style="background:rgba(15,128,246,0.06);border:1px solid rgba(15,128,246,0.18);border-radius:12px;padding:16px 18px;">
+      <div style="font-size:14px;font-weight:700;color:var(--nhn-blue);margin-bottom:10px;letter-spacing:-0.02em;">단골UP 이용 방법</div>
+      <div style="font-size:13px;color:var(--ink-3);line-height:1.9;letter-spacing:-0.01em;">
+        <div>1. PAYCO 앱 → 전체 메뉴 → 라이프 → 단골UP으로 진입</div>
+        <div>2. 최초 진입 시 nhn kcp로 주소 설정</div>
+      </div>
+    </div>
+  </div>
+  <div class="store-select-body" id="storeBtnList"></div>
+</div>
+
+<!-- ══ 메인 앱 ══ -->
+<div id="mainApp" class="hidden">
+  <div class="nav">
+    <button class="nav-back hidden" id="backBtn" onclick="goBack()">&#8249;</button>
+    <h1 id="navTitle">단골UP 현장 테스트</h1>
+    <span id="navDate" style="margin-left:auto;font-size:12px;font-weight:500;color:rgba(255,255,255,0.55);white-space:nowrap;letter-spacing:0;"></span>
+  </div>
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTab('scenario')">시나리오</button>
+    <button class="tab" onclick="switchTab('user-survey')">사용자 후기</button>
+    <button class="tab" onclick="switchTab('results')">결과</button>
+  </div>
+  <div class="store-selected-bar" id="storeBar"></div>
+
+  <!-- 시나리오 목록 -->
+  <div class="page active" id="page-scenario">
+    <div class="card">
+      <div class="card-title">진행 현황</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num blue" id="stat-total">0</div><div class="stat-label">전체</div></div>
+        <div class="stat-card"><div class="stat-num green" id="stat-pass">0</div><div class="stat-label">Pass</div></div>
+        <div class="stat-card"><div class="stat-num red" id="stat-fail">0</div><div class="stat-label">Fail</div></div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <a id="storeWebLink" href="#" target="_blank" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 14px;background:rgba(15,128,246,0.06);border-radius:8px;border:1px solid rgba(15,128,246,0.18);text-decoration:none;">
+        <span style="font-size:13px;font-weight:600;color:var(--nhn-blue);letter-spacing:-0.02em;">현장 멤버십 (매장 QR 스캔)</span>
+        <span style="font-size:12px;font-weight:600;color:var(--nhn-blue);white-space:nowrap;">바로가기 ›</span>
+      </a>
+    </div>
+    <div id="scenarioList"></div>
+    <div style="margin:24px 0 8px;padding:16px;background:#f0f7ff;border-radius:12px;text-align:center;font-size:13px;color:var(--nhn-blue);line-height:1.6;">
+      테스트를 완료했다면 <strong>사용자 후기</strong>를 남겨주세요 🙏
+    </div>
+  </div>
+
+  <!-- 시나리오 상세 -->
+  <div class="page hidden" id="page-detail">
+    <div id="detailContent"></div>
+  </div>
+
+  <!-- 사용자 후기 -->
+  <div class="page" id="page-user-survey">
+    <div class="card">
+      <div class="card-title">사용자 후기</div>
+      <p style="font-size:13px;color:var(--muted)">테스트 참여 감사합니다. 솔직한 후기가 서비스 개선에 도움이 됩니다. (3~5분)</p>
+    </div>
+    <div class="form-section-title">기본 정보</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q1. 테스트에 참여한 가맹점</label>
+        <input type="text" id="u_store" readonly style="background:#f5f5f5">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q2. 주문 방식</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(픽업)"><span>앱으로 주문 (픽업)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(배달)"><span>앱으로 주문 (배달)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="현장 취식(수기 적립)"><span>현장 취식 (포스 수기 적립)</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">앱 사용성</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q3. 앱에서 주문 완료까지의 과정이 쉽고 직관적이었나요?</label>
+        <div class="scale-group" id="u_q3"></div>
+        <div class="scale-labels"><span>매우 불편</span><span>매우 편리</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Q4. 주문 후 멤버십 적립 결과를 앱에서 쉽게 확인할 수 있었나요?</label>
+        <div class="scale-group" id="u_q4"></div>
+        <div class="scale-labels"><span>못 찾겠음</span><span>바로 확인됨</span></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q5. 앱 사용 중 불편하거나 헷갈렸던 점 <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="u_q5" value="주문 과정"><span>주문 과정</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q5" value="멤버십/적립 확인"><span>멤버십/적립 확인</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q5" value="쿠폰 사용"><span>쿠폰 사용</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q5" value="특별히 없음"><span>특별히 없음</span></label>
+        </div>
+        <input type="text" style="margin-top:8px" id="u_q5_etc" placeholder="기타 (직접 입력)">
+      </div>
+    </div>
+    <div class="form-section-title">멤버십</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q6. 적립이 제대로 됐는지 확인이 쉬웠나요?</label>
+        <div class="scale-group" id="u_q6"></div>
+        <div class="scale-labels"><span>확인 어려움</span><span>매우 쉬움</span></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q7. 적립 현황이 앱 또는 웹에서 명확하게 보였나요?</label>
+        <div class="scale-group" id="u_q7"></div>
+        <div class="scale-labels"><span>전혀 명확하지 않음</span><span>매우 명확함</span></div>
+      </div>
+    </div>
+    <div class="form-section-title">포스 수기 적립</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q8. 포스 수기 적립을 시도해봤나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q8_tried" value="시도함" onclick="toggleQ8(true)"><span>시도해 봤다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q8_tried" value="시도 안 함" onclick="toggleQ8(false)"><span>시도 안 했다</span></label>
+        </div>
+      </div>
+      <div id="u_q8_no_wrap" style="display:none">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q8-1. 시도하지 않은 이유 <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
+          <div class="check-group">
+            <label class="check-opt"><input type="checkbox" name="u_q8_reason" value="점주 거절"><span>점주가 거절했다</span></label>
+            <label class="check-opt"><input type="checkbox" name="u_q8_reason" value="바빠보여서 말 못꺼냄"><span>바빠 보여서 말 못 꺼냈다</span></label>
+            <label class="check-opt"><input type="checkbox" name="u_q8_reason" value="해당 없음(앱 주문)"><span>해당 없음 (앱 주문)</span></label>
+          </div>
+          <input type="text" style="margin-top:8px" id="u_q8_reason_etc" placeholder="기타 (직접 입력)">
+        </div>
+      </div>
+      <div id="u_q8_yes_wrap" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Q8-1. 점주가 적립 완료 후 내역을 알려줬나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="알려줬다"><span>알려줬다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="알려주지 않았다"><span>알려주지 않았다</span></label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q8-2. 적립 후 현장 멤버십 웹에서 내역을 직접 확인해봤나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인했다"><span>확인해 봤다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인 안 했다"><span>확인 안 했다</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">현장 멤버십 웹</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q9. 매장에 현장 멤버십 웹 QR이 비치되어 있었나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q9_qr" value="있었다" onclick="toggleQ9QR('있었다')"><span>있었다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q9_qr" value="없었다" onclick="toggleQ9QR('없었다')"><span>없었다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q9_qr" value="못찾겠다" onclick="toggleQ9QR('못찾겠다')"><span>못 찾겠다</span></label>
+        </div>
+      </div>
+      <div id="u_q9_qr_yes_wrap" style="display:none">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q9-1. QR 스캔이 잘 됐나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q9_qr_scan" value="잘 됐다"><span>잘 됐다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q9_qr_scan" value="잘 안 됐다"><span>잘 안 됐다</span></label>
+          </div>
+        </div>
+      </div>
+      <div id="u_q9_qr_no_wrap" style="display:none">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q9-1. QR 없이 접속했다면 어떻게 접속했나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q9_access" value="별도 링크 사용"><span>별도로 받은 링크로 접속</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q9_access" value="접속 안 함"><span>접속 안 했다</span></label>
+          </div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+      <div class="form-group">
+        <label class="form-label">Q10. 현장 멤버십 웹(휴대폰번호로 로그인)을 사용해 봤나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q9_used" value="사용함" onclick="toggleQ9(true)"><span>사용해 봤다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q9_used" value="사용 안 함" onclick="toggleQ9(false)"><span>사용 안 했다</span></label>
+        </div>
+      </div>
+      <div id="u_q9_detail_wrap" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Q10-1. 현장 멤버십 웹의 사용법이 직관적이었나요?</label>
+          <div class="scale-group" id="u_q9_intuitive"></div>
+          <div class="scale-labels"><span>전혀 아님</span><span>매우 직관적</span></div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q10-2. 멤버십/이용 내역 확인이 편리했나요?</label>
+          <div class="scale-group" id="u_q9_easy"></div>
+          <div class="scale-labels"><span>매우 불편</span><span>매우 편리</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">쿠폰</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q10. 쿠폰을 사용해 봤나요? (쿠폰이 있는 가맹점)</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q10" value="앱에서 사용"><span>앱에서 사용</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="모바일 웹에서 사용"><span>모바일 웹에서 사용</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="쿠폰 없었음"><span>쿠폰이 없었음</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="사용 안 함"><span>사용 안 했음</span></label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q11. (쿠폰 사용 시) 쿠폰 사용 과정이 쉬웠나요?</label>
+        <div class="scale-group" id="u_q11"></div>
+        <div class="scale-labels"><span>매우 어려움</span><span>매우 쉬움</span></div>
+      </div>
+    </div>
+    <div class="form-section-title">전반적 만족도</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q12. 전반적인 서비스(주문+멤버십)에 대한 만족도는?</label>
+        <div class="scale-group" id="u_q12"></div>
+        <div class="scale-labels"><span>매우 불만족</span><span>매우 만족</span></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q13. 개선이 필요하다고 느낀 점이나 추가 기능 제안</label>
+        <textarea id="u_q13" placeholder="자유롭게 입력해 주세요"></textarea>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="submitUserSurvey()">후기 제출</button>
+  </div>
+
+  <!-- 결과 -->
+  <div class="page" id="page-results">
+    <div class="stat-grid" style="margin-bottom:12px">
+      <div class="stat-card"><div class="stat-num blue" id="r-total">0</div><div class="stat-label">시나리오</div></div>
+      <div class="stat-card"><div class="stat-num green" id="r-pass">0</div><div class="stat-label">Pass</div></div>
+      <div class="stat-card"><div class="stat-num red" id="r-fail">0</div><div class="stat-label">Fail</div></div>
+    </div>
+    <div class="stat-grid" style="margin-bottom:12px">
+      <div class="stat-card"><div class="stat-num blue" id="r-user-survey">0</div><div class="stat-label">사용자 후기</div></div>
+      <div class="stat-card"><div class="stat-num red" id="r-issues">0</div><div class="stat-label">이슈</div></div>
+    </div>
+    <button class="submit-btn" id="submitResultBtn" onclick="submitResultToFirebase()" style="margin-top:8px;">결과 제출하기</button>
+    <div id="resultList"></div>
+    <button class="reset-btn" onclick="resetAll()">전체 초기화</button>
+  </div>
+</div><!-- /mainApp -->
+
+<!-- ══ 어드민 ══ -->
+<div id="page-admin" style="display:none;min-height:100vh;background:var(--canvas);">
+  <div style="background:var(--black);padding:28px 20px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div>
+        <div style="color:#fff;font-size:18px;font-weight:700;letter-spacing:-0.03em;">단골UP 현장 테스트</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">어드민</div>
+      </div>
+      <button onclick="adminRefresh()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;cursor:pointer;">새로고침</button>
+    </div>
+    <!-- 날짜 선택 -->
+    <div id="adminDateBar" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;scrollbar-width:none;"></div>
+    <!-- 탭 -->
+    <div style="display:flex;gap:4px;">
+      <button id="adminTab-result" onclick="switchAdminTab('result')" style="flex:1;padding:8px;border:none;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:var(--black);">테스트 결과</button>
+      <button id="adminTab-survey" onclick="switchAdminTab('survey')" style="flex:1;padding:8px;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);">사용자 후기</button>
+    </div>
+  </div>
+  <div style="padding:16px;" id="adminContent">
+    <div style="text-align:center;color:var(--ink-4);padding:40px 0;">불러오는 중...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// 가맹점 목록 — 실제 정보로 교체하세요
+// membership : "stamp" | "point" | "none"
+// orderType  : "pickup" | "delivery" | "both" | "none"
+// coupon     : true | false
+// webUrl     : 적립 내역 확인용 모바일 웹 URL (없으면 null)
+// ══════════════════════════════════════════════
+const STORES = [
+  { id:"M01", name:"박가부대 구로에이스하이엔드 2차점",   type:"식당", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/zgQLh7GHZOIbcsfFlgjrwg" },
+  { id:"M02", name:"텐퍼센트커피 구로하이엔드타워 2차점", type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층",  webUrl:"https://app-dangolup.payco.com/entry/Rr30wKr9_cDz9Hd7fINWwg" },
+  { id:"M03", name:"소림사 구로디지털점",                 type:"카페", membership:"none",  orderType:"pickup", location:"정문 방향 넷마블 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/N0W2iZj6XLxwWtcmdlvVxQ" },
+  { id:"M04", name:"코멧",                               type:"카페", membership:"stamp", orderType:"pickup", location:"구로구 구로동 826-1 대로변 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/h5UTY-5R1NLsrV9PGNUW8Q" },
+  { id:"M05", name:"코앤커피",                           type:"카페", membership:"stamp", orderType:"pickup", location:"에이스하이앤드타워1차 구내식당 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/xodxnql-oz3KZM7bp8a_CQ" },
+  { id:"M06", name:"92소 명품한우(에이스하이엔드지점)",  type:"식당", membership:"point", orderType:"pickup", location:"에이스하이앤드타워1차 스타벅스 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/_SOjz9MI_y62XxYbhDk7hg" },
+  { id:"M07", name:"오징어 맛집",                        type:"식당", membership:"point", orderType:"pickup", location:"쉐라톤 포포인트 호텔 옆 건물 지하 1층", webUrl:"https://app-dangolup.payco.com/entry/sKEWLty9dBMnm4vJHzYG4g" },
+  { id:"M08", name:"영향",                               type:"식당", membership:"point", orderType:"pickup", location:"금천구 남부순환로108길 7 1층 (정문 방향 도보 15~20분)", webUrl:"https://app-dangolup.payco.com/entry/a0WHapU-eLtnQoFa2TpkGw" },
+];
+
+// ══════════════════════════════════════════════
+// 시나리오 생성기 — 매장 설정에 따라 동적 생성
+// ══════════════════════════════════════════════
+function buildScenarios(store, hasCoupon) {
+  const { membership, orderType, webUrl } = store;
+  const coupon = !!hasCoupon;
+  const hasOrder = orderType !== 'none';
+  const hasPickup = orderType === 'pickup' || orderType === 'both';
+  const hasDelivery = orderType === 'delivery' || orderType === 'both';
+  const hasMembership = membership !== 'none';
+  const scenarios = [];
+
+  // ── 결제 공통 ──
+  scenarios.push({
+    id:'P1', cat:'공통', name:'결제 — PAYCO',
+    pre:'PAYCO 앱 로그인 상태',
+    steps: hasOrder
+      ? ['앱에서 메뉴 선택 후 주문','결제 수단에서 PAYCO 선택 후 결제 진행','식권 자동 적용 여부 확인','결제 완료 화면 확인']
+      : ['포스에서 금액 입력','PAYCO로 결제 진행','식권 자동 적용 여부 확인','영수증 확인'],
+    expected:'PAYCO 결제 정상 처리\n식권 자동 적용 확인',
+  });
+  scenarios.push({
+    id:'P2', cat:'공통', name:'결제 — 신용/체크 카드',
+    pre:'신용/체크 카드 준비',
+    steps: hasOrder
+      ? ['앱에서 메뉴 선택 후 주문','결제 수단에서 신용/체크 카드 선택 후 결제 진행','결제 완료 화면 확인']
+      : ['포스에서 금액 입력','신용/체크 카드로 결제 진행','영수증 확인'],
+    expected:'신용/체크 카드 결제 정상 처리\n주문 완료 확인',
+  });
+
+  // ── 단골 맺기 ──
+  const membershipExpected = membership === 'stamp'
+    ? '스탬프형 멤버십 영역 표시 확인'
+    : membership === 'point'
+    ? '포인트형 멤버십 영역 표시 확인'
+    : '멤버십 미설정으로 멤버십 영역 미표시 확인';
+
+  scenarios.push({
+    id:'D1', cat:'단골맺기', name:'PAYCO 앱으로 단골 맺기',
+    pre:'PAYCO 앱 로그인 상태',
+    steps:[
+      '단골UP 접속 (PAYCO 앱 → 전체 메뉴 → 라이프 → 단골UP)',
+      '해당 가맹점 검색 또는 찾기',
+      '단골 맺기 버튼 클릭',
+      '단골 카운트 증가 확인',
+      `멤버십 영역 표시 확인 (${membership === 'stamp' ? '스탬프형' : membership === 'point' ? '포인트형' : '설정 안함'})`,
+    ],
+    expected: '단골 카운트 증가 확인\n' + membershipExpected + '\n쿠폰이 있는 경우 쿠폰 목록 표시 확인\n단골 맺기 후 쿠폰 자동 전체 다운로드 확인',
+  });
+  scenarios.push({
+    id:'D2', cat:'단골맺기', name:'현장 멤버십 웹으로 단골 맺기',
+    pre:'모바일 브라우저 사용',
+    steps:[
+      '매장 비치 QR 스캔 또는 상단 바로가기 링크로 접속',
+      '[최초 단골맺기] 단골UP 가입하기 클릭 → 휴대폰 번호 입력 → 가맹점 상세 페이지 이동 확인',
+      '[이미 단골맺기 한 경우] 내 단골혜택 확인하기 클릭 → 휴대폰 번호 입력 → 가맹점 상세 페이지 이동 확인',
+      `멤버십 영역 표시 확인 (${membership === 'stamp' ? '스탬프형' : membership === 'point' ? '포인트형' : '설정 안함'})`,
+    ],
+    expected: '가맹점 상세 정보 정상 표시\n쿠폰 목록 표시 확인\n' + membershipExpected,
+    links: webUrl ? [{ stepIdx: 0, url: webUrl }] : [],
+    webUrl,
+  });
+
+  // ── 주문 유형별 ──
+  if (hasPickup) {
+    scenarios.push({
+      id:'O1', cat:'주문', name:'픽업 주문',
+      pre:'PAYCO 앱 로그인 상태',
+      steps:['가맹점 상세 페이지에서 픽업 탭 선택','메뉴 선택 후 주문','픽업 주문 상세 내역 확인','PAYCO 알림 확인','준비 완료되면 매장에서 픽업'],
+      expected:'픽업 주문 정상 접수\n픽업 완료 처리',
+    });
+  }
+  if (hasDelivery) {
+    scenarios.push({
+      id:'O2', cat:'주문', name:'배달 주문',
+      pre:'PAYCO 앱 로그인 상태\n배달 주소 설정 완료',
+      steps:['앱에서 배달 선택','메뉴 선택 후 주문','배달 예상 시간 확인','배달 완료 확인'],
+      expected:'배달 주문 정상 접수\n배달 완료 처리',
+    });
+  }
+  if (!hasOrder) {
+    scenarios.push({
+      id:'O3', cat:'주문', name:'앱 주문 미사용 — 현장 취식 확인',
+      pre:'앱 주문 기능 비활성화 가맹점',
+      steps:['앱에서 해당 가맹점 진입','주문 버튼 노출 여부 확인'],
+      expected:'앱 주문 UI 미노출 또는 비활성화\n현장 취식만 가능함을 안내',
+    });
+  }
+
+  // ── 멤버십 ──
+  if (hasMembership && hasOrder) {
+    scenarios.push({
+      id:'M1', cat:'멤버십', name:`앱 자동 적립 (${membership === 'stamp' ? '스탬프' : '포인트'})`,
+      pre:`${membership === 'stamp' ? '스탬프' : '포인트'}형 가맹점\n앱 주문 케이스\n(앱 주문 시 자동 적립 → M1, 현장 취식 시 포스 수기 적립 → M2)`,
+      steps:[
+        '앱에서 주문 진행',
+        '결제하기 페이지에 적립 예상 ' + (membership === 'stamp' ? '스탬프' : '포인트') + ' 표시 여부 확인',
+        '주문 완료 후 메인 화면 → 즐겨찾기에 적립 내용 반영 여부 확인',
+        '가맹점 상세 페이지에 적립 내용 반영 여부 확인',
+        '메인 → 사람 아이콘 클릭 → 내 단골 가게에 적립 내용 반영 여부 확인',
+      ],
+      expected:membership === 'stamp'
+        ? '결제 시 적립 예상 스탬프 표시\n주문 완료 후 스탬프 1개 자동 적립\n즐겨찾기·가맹점 상세·내 단골 가게에 적립 내용 반영'
+        : '결제 시 적립 예상 포인트 표시\n주문 완료 후 포인트 자동 적립\n즐겨찾기·가맹점 상세·내 단골 가게에 적립 내용 반영',
+    });
+  }
+  if (hasMembership) {
+    const isStamp = membership === 'stamp';
+    scenarios.push({
+      id:'M2', cat:'멤버십', name:`포스 수기 적립 (${isStamp ? '스탬프' : '포인트'})`,
+      pre:`${isStamp ? '스탬프' : '포인트'}형 가맹점\n앱 주문이 아닌 현장 취식 케이스\n(앱 주문 시 자동 적립 → M1, 현장 취식 시 포스 수기 적립 → M2)`,
+      steps:[
+        '고객 취식 완료',
+        '포스에서 단골UP 멤버십 적립 가능 여부 확인',
+        `가능하다면 고객 휴대폰 번호 입력 후 ${isStamp ? '스탬프' : '포인트'} 적립`,
+        '적립 완료 후 현장 멤버십 웹에 적립 내역 반영 여부 확인',
+      ],
+      expected:`포스에서 단골UP 멤버십 적립 정상 동작\n휴대폰 번호로 고객 조회 및 ${isStamp ? '스탬프' : '포인트'} 적립 완료\n현장 멤버십 웹에 적립 내역 즉시 반영`,
+    });
+  }
+  if (membership === 'stamp') {
+    scenarios.push({
+      id:'M3', cat:'멤버십', name:'스탬프 완성 → 리워드 쿠폰 발급',
+      pre:'스탬프판 완성 직전 사용자 (마지막 1개 남은 상태)',
+      steps:['마지막 스탬프 적립 (앱 주문 or 수기)','앱 쿠폰함 확인','모바일 웹 쿠폰함 확인'],
+      expected:'스탬프 완성 시 리워드 쿠폰 발급\n앱·모바일 웹 양쪽에서 확인 가능',
+    });
+  }
+  if (!hasMembership) {
+    scenarios.push({
+      id:'M5', cat:'멤버십', name:'멤버십 미사용 — 적립 UI 미노출 확인',
+      pre:'멤버십 미설정 가맹점',
+      steps:['앱에서 해당 가맹점 진입','멤버십/적립 관련 UI 확인'],
+      expected:'적립 관련 UI 미노출',
+    });
+  }
+
+  // ── 쿠폰 ──
+  if (coupon) {
+    scenarios.push({
+      id:'C1', cat:'쿠폰', name:'쿠폰 사용 — 앱',
+      pre:'쿠폰 보유 사용자\nPAYCO 앱 로그인 상태',
+      steps:[
+        '장바구니 또는 결제하기 페이지에서 쿠폰 사용 가능 시 쿠폰 사용 영역 노출 확인',
+        '상품 → 할인 쿠폰 순서로 선택 후 쿠폰 적용\n(*이 주문에서 사용 가능한 쿠폰만 노출됩니다)',
+        '결제 완료 후 주문 내역 상세에서 쿠폰 적용 표시 확인',
+        '가맹점 상세 페이지에서 쿠폰 재다운로드 가능 여부 확인\n(*쿠폰 개수 제한이 있으면 소진 시 재다운로드 불가)',
+      ],
+      expected:'쿠폰 사용 영역 정상 노출\n쿠폰 할인 적용 후 결제 완료\n주문 내역 상세에서 쿠폰 적용 내역 표시\n쿠폰 소진 전: 재다운로드 가능 / 소진 시: 재다운로드 불가',
+    });
+    scenarios.push({
+      id:'C2', cat:'쿠폰', name:'쿠폰 사용 — 모바일 웹',
+      pre:'현장 멤버십 웹 로그인 상태',
+      steps:[
+        '현장 멤버십 웹 로그인',
+        '쿠폰 목록에서 쿠폰 다운로드',
+        '사장님께 쿠폰 보여주면서 쿠폰 사용',
+        '사용 완료 후 목록에서 쿠폰 사라짐 확인',
+        '다시 현장 멤버십 웹 로그인 시 쿠폰 재다운로드 가능 여부 확인\n(*쿠폰 개수 제한이 있으면 소진 시 재다운로드 불가)',
+      ],
+      expected:'쿠폰 목록 정상 노출 및 다운로드 완료\n쿠폰 사용 후 목록에서 즉시 차감\n소진 전: 재다운로드 가능 / 소진 시: 재다운로드 불가',
+    });
+  } else {
+    scenarios.push({
+      id:'C3', cat:'쿠폰', name:'쿠폰 UI 미노출 확인',
+      pre:'쿠폰 미발행 가맹점',
+      steps:['앱에서 해당 가맹점 주문 화면 진입','모바일 웹에서도 확인'],
+      expected:'쿠폰 관련 UI 미노출 (앱·모바일 웹 모두)',
+    });
+  }
+
+  // ── 적립 내역 확인 ──
+  if (hasMembership) {
+    scenarios.push({
+      id:'H1', cat:'이용내역', name:'앱에서 주문 내역 확인',
+      pre:'앱으로 주문을 완료하여 주문 내역이 1개 이상 있는 상태',
+      steps:[
+        '단골UP 메인 → 사람 아이콘 클릭 → 주문 내역 접속',
+        '주문 내역 확인 및 내역 클릭 시 상세 내역 표시 확인',
+        '주문/할인/결제 내역 확인 (*적립 내역 미표시)',
+      ],
+      expected:'주문 내역 목록 정상 표시\n내역 클릭 시 상세 화면으로 이동\n주문·할인·결제 내역 정확히 표시',
+    });
+    const webStep = webUrl
+      ? [
+          '현장 멤버십 웹 접속 및 로그인',
+          '가맹점 상세 페이지에서 이용 내역 탭 확인',
+          '결제 금액/적립 내역/' + (membership === 'point' ? '사용 내역/' : '') + '쿠폰 사용 여부 확인\n(*쿠폰 미사용 시 히든 처리 여부 확인)',
+        ]
+      : ['모바일 웹 URL 미설정 — 담당자에게 URL 확인 후 테스트'];
+    const webExpected = webUrl
+      ? '이용 내역 탭 정상 표시\n결제 금액·적립 내역 정확히 표시' + (membership === 'point' ? '\n포인트 사용 내역 표시' : '')
+      : 'URL 확인 필요';
+    const webLinks = webUrl ? [{ stepIdx: 0, url: webUrl }] : [];
+    scenarios.push({
+      id:'H2', cat:'이용내역', name:'웹에서 이용 내역 확인',
+      pre: webUrl ? '포스 수기 적립 내역이 1개 이상 있는 상태\n현장 멤버십 웹 로그인 상태' : 'webUrl 미설정 — 담당자 확인 필요',
+      steps: webStep,
+      expected: webExpected,
+      links: webLinks,
+      webUrl,
+    });
+  }
+
+  return scenarios;
+}
+
+// ══════════════════════════════════════════════
+// 앱 상태
+// ══════════════════════════════════════════════
+let currentStore = null;
+let currentScenarios = [];
+let currentScenario = null;
+let prevPage = null;
+let selectedPF = null;
+
+function loadState() { return JSON.parse(localStorage.getItem('testState') || '{}'); }
+function saveState(s) { localStorage.setItem('testState', JSON.stringify(s)); }
+
+// ── 매장 선택 화면 ──
+function initStoreSelect() {
+  const saved = localStorage.getItem('selectedStore');
+  if (saved) {
+    currentStore = JSON.parse(saved);
+    enterApp();
+    return;
+  }
+  document.getElementById('storeBtnList').innerHTML = STORES.map(s => `
+    <button class="store-btn" onclick="selectStore('${s.id}')">
+      <div class="store-btn-content">
+        <div class="store-btn-name">${s.name}</div>
+        ${s.location ? `<div class="store-btn-location">📍 ${s.location}</div>` : ''}
+        <div class="store-btn-meta">
+          <span class="store-tag tag-type">${s.type}</span>
+          ${ s.membership === 'stamp' ? '<span class="store-tag tag-stamp">스탬프형</span>'
+           : s.membership === 'point' ? '<span class="store-tag tag-point">포인트형</span>'
+           : '<span class="store-tag tag-nomembership">멤버십 미사용</span>' }
+          ${ s.orderType === 'pickup'   ? '<span class="store-tag tag-order">픽업</span>'
+           : s.orderType === 'delivery' ? '<span class="store-tag tag-order">배달</span>'
+           : s.orderType === 'both'     ? '<span class="store-tag tag-order">픽업+배달</span>'
+           : '<span class="store-tag tag-order">주문 미사용</span>' }
+        </div>
+      </div>
+      <div class="store-btn-chevron">›</div>
+    </button>`).join('');
+}
+
+function selectStore(id) {
+  currentStore = STORES.find(s => s.id === id);
+  localStorage.setItem('selectedStore', JSON.stringify(currentStore));
+  enterApp();
+}
+
+function enterApp() {
+  currentScenarios = buildScenarios(currentStore, true);
+  document.getElementById('page-store-select').style.display = 'none';
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('storeBar').innerHTML =
+    `<span> ${currentStore.name}</span><button class="store-change-btn" onclick="changeStore()">변경</button>`;
+  document.getElementById('u_store').value = currentStore.name;
+  const webLink = document.getElementById('storeWebLink');
+  if (currentStore.webUrl) { webLink.href = currentStore.webUrl; webLink.style.display = 'flex'; }
+  else { webLink.style.display = 'none'; }
+  document.getElementById('backBtn').classList.add('hidden');
+  initScenarios();
+}
+
+function changeStore() {
+  if (!confirm('매장을 변경하면 현재 기기의 테스트 결과가 초기화됩니다. 계속할까요?')) return;
+  localStorage.removeItem('selectedStore');
+  localStorage.removeItem('testState');
+  location.reload();
+}
+
+// ── 시나리오 목록 ──
+
+
+const CAT_BADGE = { '단골맺기':'badge-단골맺기', '공통':'badge-공통', '멤버십':'badge-멤버십', '주문':'badge-주문', '쿠폰':'badge-쿠폰', '이용내역':'badge-이용내역', '취소':'badge-취소' };
+const CAT_LABEL = { '단골맺기':'단골 맺기', '공통':'결제 공통', '멤버십':'멤버십', '주문':'주문 유형', '쿠폰':'쿠폰', '이용내역':'이용 내역 확인', '취소':'취소/회수' };
+
+function initScenarios() {
+  const state = loadState();
+  const list = document.getElementById('scenarioList');
+  list.innerHTML = '';
+  let pass = 0, fail = 0, done = 0;
+
+  // 카테고리별 그룹
+  const groups = {};
+  currentScenarios.forEach(s => {
+    if (!groups[s.cat]) groups[s.cat] = [];
+    groups[s.cat].push(s);
+  });
+
+  const CAT_ORDER = ['단골맺기', '주문', '쿠폰', '공통', '멤버십', '이용내역', '취소'];
+  const sortedEntries = CAT_ORDER.filter(c => groups[c]).map(c => [c, groups[c]]);
+
+  sortedEntries.forEach(([cat, items]) => {
+    const title = document.createElement('div');
+    title.className = 'scenario-group-title';
+    title.textContent = CAT_LABEL[cat] || cat;
+    list.appendChild(title);
+
+    items.forEach(s => {
+      const r = state[s.id] || {};
+      const status = r.result || '';
+      if (status === 'pass') pass++;
+      if (status === 'fail') fail++;
+      if (status) done++;
+
+      const div = document.createElement('div');
+      div.className = `scenario-item ${status}`;
+      div.innerHTML = `
+        <div class="scenario-meta">
+          <span class="scenario-id">${s.id}</span>
+          <span class="badge ${CAT_BADGE[s.cat]}">${s.cat}</span>
+          ${status === 'na' ? `<span class="badge badge-na">해당없음</span>` : status ? `<span class="badge badge-${status}">${status.toUpperCase()}</span>` : '<span class="status-dot"></span>'}
+        </div>
+        <div class="scenario-name">${s.name}</div>
+        <div class="scenario-pre">${s.pre.split('\n')[0]}</div>`;
+      div.onclick = () => openDetail(s.id);
+      list.appendChild(div);
+    });
+  });
+
+  document.getElementById('stat-pass').textContent = pass;
+  document.getElementById('stat-fail').textContent = fail;
+  document.getElementById('stat-total').textContent = currentScenarios.length;
+  document.getElementById('progressFill').style.width = done ? (done / currentScenarios.length * 100) + '%' : '0%';
+}
+
+// ── 시나리오 상세 ──
+function openDetail(id) {
+  currentScenario = currentScenarios.find(s => s.id === id);
+  const state = loadState();
+  const r = state[id] || {};
+  selectedPF = r.result || null;
+  const s = currentScenario;
+
+  const steps = s.steps.map((st, i) => {
+    const link = s.links && s.links.find(l => l.stepIdx === i);
+    return `<li>
+      <span class="step-num">${i+1}</span>
+      <span>${st.replace(/\n/g,'<br>')}${link ? `<br><a class="step-link" href="${link.url}" target="_blank">${link.url}</a>` : ''}</span>
+    </li>`;
+  }).join('');
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="card">
+      <div class="scenario-meta" style="margin-bottom:10px">
+        <span class="scenario-id">${s.id}</span>
+        <span class="badge ${CAT_BADGE[s.cat]}">${s.cat}</span>
+      </div>
+      <div style="font-size:16px;font-weight:700">${s.name}</div>
+    </div>
+    <div class="card">
+      <div class="detail-section">
+        <div class="detail-label">사전 조건</div>
+        <div class="precond-box">${s.pre.replace(/\n/g,'<br>')}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">테스트 단계</div>
+        <ul class="step-list">${steps}</ul>
+      </div>
+      <div class="detail-section" style="margin-bottom:0">
+        <div class="detail-label">기대 결과</div>
+        <div class="expected-box">${s.expected.replace(/\n/g,'<br>')}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="detail-label" style="margin-bottom:10px">결과 입력</div>
+      <div class="pf-row">
+        <button class="pf-btn pass-btn ${selectedPF==='pass'?'selected':''}" onclick="selectPF('pass')">Pass</button>
+        <button class="pf-btn fail-btn ${selectedPF==='fail'?'selected':''}" onclick="selectPF('fail')">Fail</button>
+      </div>
+      <div style="margin-top:12px">
+        <div class="detail-label" style="margin-bottom:6px">메모 / 이슈 내용</div>
+        <textarea id="detailNote" placeholder="내용을 입력하세요." style="background:#ffffff">${r.note||''}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:stretch">
+        <button class="na-btn" onclick="saveNA()" style="flex:1;margin-top:0">해당 없음</button>
+        <button class="save-btn" onclick="saveDetail()" style="flex:2;margin-top:0">저장</button>
+      </div>
+    </div>`;
+
+  prevPage = 'scenario';
+  showPage('detail');
+  const backBtn = document.getElementById('backBtn');
+  backBtn.classList.remove('hidden');
+  backBtn.dataset.target = 'detail';
+  document.getElementById('mainTabs').classList.add('hidden');
+  document.getElementById('storeBar').classList.add('hidden');
+  const title = s.name.length > 18 ? s.name.slice(0,18) + '…' : s.name;
+  document.getElementById('navTitle').textContent = `${s.id} — ${title}`;
+}
+
+function selectPF(val) {
+  selectedPF = val;
+  document.querySelectorAll('.pass-btn,.fail-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(val==='pass' ? '.pass-btn' : '.fail-btn').classList.add('selected');
+}
+
+function saveNA() {
+  const state = loadState();
+  state[currentScenario.id] = { result: 'na', note: '해당 없음', ts: Date.now() };
+  saveState(state);
+  showToast('해당 없음으로 저장됐어요');
+  setTimeout(goBack, 600);
+}
+
+function saveDetail() {
+  if (!selectedPF) { showToast('Pass / Fail를 선택해 주세요'); return; }
+  const note = document.getElementById('detailNote').value;
+  const state = loadState();
+  state[currentScenario.id] = { result: selectedPF, note, ts: Date.now() };
+  saveState(state);
+  showToast('저장됐어요!');
+  setTimeout(goBack, 600);
+}
+
+function goBack() {
+  const backBtn = document.getElementById('backBtn');
+  // 시나리오 상세 → 목록
+  showPage(prevPage || 'scenario');
+  backBtn.classList.add('hidden');
+  backBtn.dataset.target = '';
+  document.getElementById('mainTabs').classList.remove('hidden');
+  document.getElementById('storeBar').classList.remove('hidden');
+  document.getElementById('navTitle').textContent = '단골UP 현장 테스트';
+  selectedPF = null;
+  if (prevPage === 'scenario') initScenarios();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['scenario','user-survey','results'][i] === tab);
+  });
+  showPage(tab);
+  if (tab === 'results') renderResults();
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.classList.add('hidden');
+    if (p.id === 'page-' + name) { p.classList.remove('hidden'); p.classList.add('active'); }
+  });
+}
+
+// ── 5점 척도 ──
+function renderScales() {
+  ['u_q3','u_q4','u_q6','u_q7','u_q9_intuitive','u_q9_easy','u_q11','u_q12','o_q3','o_q7','o_q8','o_q9','o_q10'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = [1,2,3,4,5].map(n =>
+      `<button class="scale-btn" data-id="${id}" data-val="${n}" onclick="selectScale('${id}',${n})">${n}</button>`
+    ).join('');
+  });
+}
+function selectScale(id, val) {
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(b =>
+    b.classList.toggle('selected', parseInt(b.dataset.val) === val));
+}
+function getScale(id) {
+  const b = document.querySelector(`[data-id="${id}"].selected`);
+  return b ? b.dataset.val : '';
+}
+function getRadio(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+function getChecks(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value).join(', ');
+}
+
+// ── 후기 제출 ──
+function submitUserSurvey() {
+  const data = {
+    type:'user', ts: new Date().toLocaleString('ko-KR'),
+    store: currentStore.name,
+    order_type: getRadio('u_order_type'),
+    q3:getScale('u_q3'), q4:getScale('u_q4'),
+    q5: getChecks('u_q5') + (document.getElementById('u_q5_etc').value ? ' / '+document.getElementById('u_q5_etc').value : ''),
+    q6:getScale('u_q6'), q7:getScale('u_q7'),
+    q8_tried: getRadio('u_q8_tried'),
+    q8_reason: getChecks('u_q8_reason') + (document.getElementById('u_q8_reason_etc').value ? ' / '+document.getElementById('u_q8_reason_etc').value : ''),
+    q8_noti: getRadio('u_q8_noti'),
+    q8_web_check: getRadio('u_q8_web_check'),
+    q9_qr: getRadio('u_q9_qr'),
+    q9_qr_scan: getRadio('u_q9_qr_scan'),
+    q9_access: getRadio('u_q9_access'),
+    q9_used: getRadio('u_q9_used'),
+    q9_intuitive: getScale('u_q9_intuitive'),
+    q9_easy: getScale('u_q9_easy'),
+    q10:getRadio('u_q10'), q11:getScale('u_q11'),
+    q12:getScale('u_q12'), q13:document.getElementById('u_q13').value,
+  };
+  const surveys = JSON.parse(localStorage.getItem('surveys')||'[]');
+  surveys.push(data);
+  localStorage.setItem('surveys', JSON.stringify(surveys));
+  showToast('후기가 제출됐어요!');
+  setTimeout(() => switchTab('results'), 800);
+}
+
+// ── 결과 ──
+function renderResults() {
+  const state = loadState();
+  const surveys = JSON.parse(localStorage.getItem('surveys')||'[]');
+  let pass = 0, fail = 0;
+  const items = currentScenarios.map(s => {
+    const r = state[s.id] || {};
+    if (r.result === 'pass') pass++;
+    if (r.result === 'fail') fail++;
+    return r.result ? `
+      <div class="result-item ${r.result}">
+        <div class="result-name">${s.id} — ${s.name}</div>
+        ${r.note ? `<div class="result-note">${r.note}</div>` : ''}
+      </div>` : '';
+  }).join('');
+
+  document.getElementById('r-total').textContent = pass + fail;
+  document.getElementById('r-pass').textContent = pass;
+  document.getElementById('r-fail').textContent = fail;
+  document.getElementById('r-user-survey').textContent = surveys.filter(s=>s.type==='user').length;
+  document.getElementById('r-issues').textContent = fail;
+  document.getElementById('resultList').innerHTML = items || '<div class="skip-notice">아직 입력된 시나리오 결과가 없어요</div>';
+}
+
+function exportCSV() {
+  const state = loadState();
+  const surveys = JSON.parse(localStorage.getItem('surveys')||'[]');
+  let csv = '﻿';
+  csv += '## 시나리오 결과\n';
+  csv += 'ID,구분,시나리오명,가맹점,결과,메모,시각\n';
+  currentScenarios.forEach(s => {
+    const r = state[s.id] || {};
+    csv += `"${s.id}","${s.cat}","${s.name}","${currentStore.name}","${r.result||'미입력'}","${(r.note||'').replace(/"/g,'""')}","${r.ts?new Date(r.ts).toLocaleString('ko-KR'):''}"\n`;
+  });
+  csv += '\n## 사용자 후기\n';
+  csv += '시각,가맹점,주문방식,Q3,Q4,Q5,Q6,Q7,Q8수기적립시도,Q8미시도이유,Q8점주알림,Q8웹내역확인,Q9현장웹사용,Q9직관성,Q9편리성,Q10,Q11,Q12,Q13\n';
+  surveys.filter(s=>s.type==='user').forEach(s => {
+    csv += [s.ts,s.store,s.order_type,s.q3,s.q4,s.q5,s.q6,s.q7,s.q8_tried,s.q8_reason,s.q8_noti,s.q8_web_check,s.q9_used,s.q9_intuitive,s.q9_easy,s.q10,s.q11,s.q12,s.q13]
+      .map(v=>`"${(v||'').replace(/"/g,'""')}"`) .join(',') + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `현장테스트_${currentStore.name}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('CSV 다운로드 시작!');
+}
+
+function resetAll() {
+  if (!confirm('모든 테스트 결과와 후기를 초기화할까요?')) return;
+  localStorage.removeItem('testState');
+  localStorage.removeItem('surveys');
+  initScenarios();
+  renderResults();
+  showToast('초기화됐어요');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// 포스 수기 적립 toggle
+function toggleQ8(tried) {
+  document.getElementById('u_q8_no_wrap').style.display = tried ? 'none' : 'block';
+  document.getElementById('u_q8_yes_wrap').style.display = tried ? 'block' : 'none';
+}
+// 현장 멤버십 웹 QR toggle
+function toggleQ9QR(val) {
+  document.getElementById('u_q9_qr_yes_wrap').style.display = val === '있었다' ? 'block' : 'none';
+  document.getElementById('u_q9_qr_no_wrap').style.display = (val === '없었다' || val === '못찾겠다') ? 'block' : 'none';
+}
+// 현장 멤버십 웹 사용 toggle
+function toggleQ9(used) {
+  document.getElementById('u_q9_detail_wrap').style.display = used ? 'block' : 'none';
+}
+
+// ── Firebase 결과 제출 ──
+function getTeamName() {
+  const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
+  return myList.length ? myList[0].team : null;
+}
+
+function submitResultToFirebase() {
+  const team = getTeamName();
+  if (!team) {
+    showToast('매장 신청 시 입력한 소속/팀 정보가 없어요.\n먼저 테스트 매장을 신청해 주세요.');
+    return;
+  }
+  if (!currentStore) { showToast('매장을 먼저 선택해 주세요.'); return; }
+
+  const state = loadState();
+  const scenarios = {};
+  currentScenarios.forEach(s => {
+    const r = state[s.id] || {};
+    scenarios[s.id] = { name: s.name, cat: s.cat, result: r.result || '미입력', note: r.note || '' };
+  });
+
+  const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+  const mySurvey = surveys.filter(s => s.type === 'user').slice(-1)[0] || null;
+
+  const storeKey = currentStore.name.replace(/[.#$[\]/]/g, '_');
+  const teamKey = team.replace(/[.#$[\]/]/g, '_');
+
+  const payload = {
+    store: currentStore.name,
+    team,
+    ts: new Date().toLocaleString('ko-KR'),
+    scenarios,
+    survey: mySurvey || null,
+  };
+
+  const btn = document.getElementById('submitResultBtn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+
+  db.ref(`results/${todayStr}/${storeKey}`).push(payload)
+    .then(() => {
+      showToast('결과가 제출됐어요! ✅');
+      btn.textContent = '제출 완료 ✅';
+      setTimeout(() => {
+        document.getElementById('mainApp').classList.add('hidden');
+        showEntryPage('entry');
+      }, 1200);
+    })
+    .catch(() => {
+      showToast('제출 실패. 다시 시도해 주세요.');
+      btn.disabled = false;
+      btn.textContent = '결과 제출하기';
+    });
+}
+
+// ── 어드민 뷰 ──
+function initAdmin() {
+  ['page-entry','page-signup','page-store-select','mainApp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('page-admin').style.display = 'block';
+  renderAdminDateBar([]);
+  adminRefresh();
+}
+
+let currentAdminTab = 'result';
+let currentAdminDate = '__all__';
+
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  ['result','survey'].forEach(t => {
+    const btn = document.getElementById(`adminTab-${t}`);
+    if (t === tab) {
+      btn.style.background = '#fff'; btn.style.color = 'var(--black)'; btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.15)'; btn.style.color = 'rgba(255,255,255,0.7)'; btn.style.fontWeight = '600';
+    }
+  });
+  adminRefresh();
+}
+
+function selectAdminDate(date) {
+  currentAdminDate = date;
+  renderAdminDateBar();
+  adminRefresh();
+}
+
+function renderAdminDateBar(dates) {
+  const bar = document.getElementById('adminDateBar');
+  if (dates) bar._dates = dates;
+  const all = bar._dates || [];
+  const btns = ['__all__', ...all.sort().reverse()].map(d => {
+    const isActive = d === currentAdminDate;
+    const label = d === '__all__' ? '전체' : d.slice(5); // MM-DD
+    return `<button onclick="selectAdminDate('${d}')" style="
+      flex-shrink:0;padding:5px 14px;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+      background:${isActive ? '#fff' : 'rgba(255,255,255,0.15)'};
+      color:${isActive ? 'var(--black)' : 'rgba(255,255,255,0.7)'};
+    ">${label}</button>`;
+  }).join('');
+  bar.innerHTML = btns;
+}
+
+function adminRefresh() {
+  const el = document.getElementById('adminContent');
+  el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">불러오는 중...</div>';
+
+  db.ref('results').once('value', snapshot => {
+    const allData = snapshot.val() || {};
+    const dates = Object.keys(allData);
+    renderAdminDateBar(dates);
+
+    // 날짜 필터링
+    let filteredData = {};
+    if (currentAdminDate === '__all__') {
+      // 전체: 모든 날짜 병합 (같은 storeKey면 submissions 합치기)
+      dates.forEach(date => {
+        Object.entries(allData[date] || {}).forEach(([storeKey, subs]) => {
+          if (!filteredData[storeKey]) filteredData[storeKey] = {};
+          Object.entries(subs).forEach(([k, v]) => {
+            filteredData[storeKey][`${date}_${k}`] = v;
+          });
+        });
+      });
+    } else {
+      filteredData = allData[currentAdminDate] || {};
+    }
+
+    const allSubmissions = [];
+    Object.values(filteredData).forEach(subs => {
+      Object.values(subs).forEach(d => allSubmissions.push(d));
+    });
+
+    if (!allSubmissions.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 결과가 없어요</div>';
+      return;
+    }
+
+    if (currentAdminTab === 'result') {
+      renderAdminResult(el, filteredData);
+    } else {
+      renderAdminSurvey(el, allSubmissions);
+    }
+  });
+}
+
+function toggleFreeText(btn) {
+  const body = btn.nextElementSibling;
+  const arrow = btn.querySelector('.ft-arrow');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+let currentResultStore = '__all__';
+
+function filterResultStore(storeKey) {
+  currentResultStore = storeKey;
+  // 칩 스타일 갱신
+  document.querySelectorAll('.result-store-chip').forEach(btn => {
+    const active = btn.dataset.store === storeKey;
+    btn.style.background = active ? 'var(--nhn-blue)' : '#fff';
+    btn.style.color = active ? '#fff' : 'var(--ink-2)';
+    btn.style.borderColor = active ? 'var(--nhn-blue)' : 'var(--line-soft)';
+  });
+  // 가게별 섹션 show/hide
+  document.querySelectorAll('.result-store-section').forEach(sec => {
+    sec.style.display = (storeKey === '__all__' || sec.dataset.store === storeKey) ? 'block' : 'none';
+  });
+}
+
+function renderAdminResult(el, data) {
+  const stores = Object.entries(data).map(([k, subs]) => ({
+    key: k,
+    name: Object.values(subs)[0]?.store || k,
+  }));
+
+  // 필터 칩
+  const chips = [{ key: '__all__', name: '전체' }, ...stores].map(s => {
+    const active = s.key === currentResultStore;
+    return `<button class="result-store-chip" data-store="${s.key}" onclick="filterResultStore('${s.key}')" style="
+      flex-shrink:0;padding:5px 14px;border:1px solid ${active ? 'var(--nhn-blue)' : 'var(--line-soft)'};
+      border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+      background:${active ? 'var(--nhn-blue)' : '#fff'};color:${active ? '#fff' : 'var(--ink-2)'};
+    ">${s.name}</button>`;
+  }).join('');
+
+  let html = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;scrollbar-width:none;">${chips}</div>`;
+
+  Object.entries(data).forEach(([storeKey, submissions]) => {
+    const submissionList = Object.values(submissions);
+    const storeName = submissionList[0]?.store || storeKey;
+    const show = currentResultStore === '__all__' || currentResultStore === storeKey;
+
+    // 전체 합산
+    let totalPass = 0, totalFail = 0, totalSkip = 0, totalNotDone = 0;
+    submissionList.forEach(d => {
+      const sc = Object.values(d.scenarios || {});
+      totalPass += sc.filter(s => s.result === 'pass').length;
+      totalFail += sc.filter(s => s.result === 'fail').length;
+      totalSkip += sc.filter(s => s.result === 'na').length;
+      totalNotDone += sc.filter(s => !s.result || s.result === '미입력').length;
+    });
+
+    html += `<div class="result-store-section" data-store="${storeKey}" style="display:${show ? 'block' : 'none'};margin-bottom:24px;">`;
+
+    // 가게 헤더 카드
+    html += `
+    <div style="background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${storeName}</div>
+        <div style="font-size:12px;color:var(--ink-4);">제출 ${submissionList.length}명</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="background:rgba(1,160,88,0.1);color:#01a058;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">Pass ${totalPass}</span>
+        <span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">Fail ${totalFail}</span>
+        ${totalSkip ? `<span style="background:rgba(0,0,0,0.06);color:var(--ink-4);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">해당없음 ${totalSkip}</span>` : ''}
+        ${totalNotDone ? `<span style="background:rgba(0,0,0,0.04);color:var(--ink-4);font-size:12px;padding:3px 10px;border-radius:20px;">미입력 ${totalNotDone}</span>` : ''}
+      </div>
+    </div>`;
+
+    // 개별 제출
+    submissionList.forEach((d, idx) => {
+      const scenarios = d.scenarios || {};
+      const pass = Object.values(scenarios).filter(s => s.result === 'pass').length;
+      const fail = Object.values(scenarios).filter(s => s.result === 'fail').length;
+      const skip = Object.values(scenarios).filter(s => s.result === 'na').length;
+      const notDone = Object.values(scenarios).filter(s => !s.result || s.result === '미입력').length;
+      const timeStr = d.ts ? d.ts.split(' ').slice(-1)[0] : '';
+
+      html += `
+      <div style="background:#f8f9fa;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:8px;margin-left:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink-2);">사용자 ${idx + 1}</div>
+          <div style="font-size:11px;color:var(--ink-4);">${timeStr}</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="background:rgba(1,160,88,0.1);color:#01a058;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">Pass ${pass}</span>
+          <span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">Fail ${fail}</span>
+          ${skip ? `<span style="background:rgba(0,0,0,0.06);color:var(--ink-4);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">해당없음 ${skip}</span>` : ''}
+          ${notDone ? `<span style="background:rgba(0,0,0,0.04);color:var(--ink-4);font-size:11px;padding:2px 8px;border-radius:20px;">미입력 ${notDone}</span>` : ''}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${Object.values(scenarios).some(s => s.note && s.result !== 'na') ? '8px' : '0'};">
+          ${Object.entries(scenarios).map(([id, s]) => {
+            const color = s.result === 'pass' ? '#01a058' : s.result === 'fail' ? '#dc2626' : '#aaa';
+            const bg = s.result === 'pass' ? 'rgba(1,160,88,0.08)' : s.result === 'fail' ? 'rgba(220,38,38,0.08)' : 'rgba(0,0,0,0.05)';
+            return `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${bg};color:${color};font-weight:600;">${id}${s.note && s.result !== 'na' ? ' 📝' : ''}</span>`;
+          }).join('')}
+        </div>
+        ${Object.entries(scenarios).filter(([,s]) => s.note && s.result !== 'na').map(([id, s]) => {
+          const color = s.result === 'fail' ? '#dc2626' : 'var(--ink-3)';
+          return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;background:#fff;border-radius:8px;margin-bottom:4px;">
+            <span style="font-size:11px;font-weight:700;color:${color};flex-shrink:0;margin-top:1px;">${id}</span>
+            <span style="font-size:12px;color:var(--ink-2);line-height:1.5;">${s.note}</span>
+          </div>`;
+        }).join('')}
+        ${d.survey ? '' : '<div style="margin-top:6px;font-size:11px;color:var(--ink-4);">후기 미제출</div>'}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderAdminSurvey(el, allSubmissions) {
+  const withSurvey = allSubmissions.filter(d => d.survey);
+  if (!withSurvey.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 후기가 없어요</div>';
+    return;
+  }
+
+  const n = withSurvey.length;
+  const surveys = withSurvey.map(d => d.survey);
+
+  function countDist(fn) {
+    const map = {};
+    surveys.forEach(s => {
+      const v = fn(s); if (!v) return;
+      v.split(' / ').forEach(item => { map[item.trim()] = (map[item.trim()] || 0) + 1; });
+    });
+    return Object.entries(map).sort((a,b) => b[1]-a[1]);
+  }
+
+  function avg(fn) {
+    const vals = surveys.map(fn).filter(v => v);
+    if (!vals.length) return null;
+    return (vals.reduce((a,b) => a + Number(b), 0) / vals.length).toFixed(1);
+  }
+
+  // 선택형 카드 (구글폼 스타일 가로 바)
+  function choiceCard(label, fn, qNum) {
+    const dist = countDist(fn);
+    if (!dist.length) return '';
+    const responded = dist.reduce((a,[,c]) => a+c, 0);
+    const maxCount = dist[0][1];
+    const colors = ['#4285f4','#ea4335','#fbbc04','#34a853','#9c27b0','#ff6d00'];
+    return `
+    <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5f6368;margin-bottom:4px;">${qNum}</div>
+      <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:16px;">${label}</div>
+      <div style="font-size:12px;color:#5f6368;margin-bottom:12px;">${responded}명 응답</div>
+      ${dist.map(([v, c], i) => {
+        const pct = Math.round(c / responded * 100);
+        const barW = Math.round(c / maxCount * 100);
+        return `<div style="margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${colors[i%colors.length]};flex-shrink:0;"></div>
+            <div style="font-size:13px;color:#202124;flex:1;">${v}</div>
+            <div style="font-size:13px;color:#5f6368;white-space:nowrap;">${c}명 (${pct}%)</div>
+          </div>
+          <div style="margin-left:20px;background:#f1f3f4;border-radius:3px;height:8px;overflow:hidden;">
+            <div style="background:${colors[i%colors.length]};height:100%;width:${barW}%;border-radius:3px;transition:width 0.3s;"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // 점수형 카드 (1~5 분포 + 평균)
+  function scaleCard(label, fn, qNum, minLabel, maxLabel) {
+    const a = avg(fn);
+    if (!a) return '';
+    const dist = [1,2,3,4,5].map(i => {
+      const c = surveys.filter(s => Number(fn(s)) === i).length;
+      return [i, c];
+    });
+    const maxC = Math.max(...dist.map(([,c])=>c), 1);
+    return `
+    <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5f6368;margin-bottom:4px;">${qNum}</div>
+      <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:16px;">${label}</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:80px;margin-bottom:8px;">
+        ${dist.map(([score, c]) => {
+          const h = Math.round(c / maxC * 64) + 4;
+          const isHigh = score >= 4;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <div style="font-size:11px;color:#5f6368;">${c||''}</div>
+            <div style="width:100%;background:${isHigh?'#4285f4':'#dadce0'};border-radius:4px 4px 0 0;height:${h}px;"></div>
+            <div style="font-size:12px;color:#5f6368;">${score}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-bottom:12px;">
+        <span>${minLabel||''}</span><span>${maxLabel||''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid #f1f3f4;">
+        <span style="font-size:12px;color:#5f6368;">평균</span>
+        <span style="font-size:22px;font-weight:700;color:#4285f4;">${a}</span>
+        <span style="font-size:12px;color:#9aa0a6;">/ 5</span>
+      </div>
+    </div>`;
+  }
+
+  // 섹션 헤더
+  function sectionHeader(title) {
+    return `<div style="font-size:12px;font-weight:600;color:#5f6368;letter-spacing:0.08em;text-transform:uppercase;margin:24px 0 10px;padding-left:2px;">${title}</div>`;
+  }
+
+  const freeTexts = withSurvey.map(d => ({ team: d.team, text: d.survey.q13 })).filter(d => d.text);
+
+  // 2열 그리드용 래퍼
+  function gridWrap(items) {
+    const filtered = items.filter(Boolean);
+    if (!filtered.length) return '';
+    return `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:4px;">${filtered.join('')}</div>`;
+  }
+
+  let html = `
+  <div style="max-width:900px;margin:0 auto;">
+  <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12);padding:16px 24px;margin-bottom:16px;border-top:8px solid #4285f4;">
+    <div style="font-size:16px;font-weight:500;color:#202124;">사용자 후기 분석</div>
+    <div style="font-size:13px;color:#5f6368;margin-top:4px;">총 응답 ${n}명</div>
+  </div>`;
+
+  html += sectionHeader('앱 사용성');
+  html += gridWrap([
+    scaleCard('앱 주문 직관성', s=>s.q3, 'Q3', '매우 불편', '매우 편리'),
+    scaleCard('적립 결과 확인 용이성', s=>s.q4, 'Q4', '못 찾겠음', '바로 확인됨'),
+    choiceCard('앱 불편사항', s=>s.q5, 'Q5'),
+  ]);
+
+  html += sectionHeader('멤버십');
+  html += gridWrap([
+    scaleCard('적립 확인 용이성', s=>s.q6, 'Q6', '확인 어려움', '매우 쉬움'),
+    scaleCard('적립 현황 명확성', s=>s.q7, 'Q7', '전혀 명확하지 않음', '매우 명확함'),
+  ]);
+
+  html += sectionHeader('포스 수기 적립');
+  html += gridWrap([
+    choiceCard('수기 적립 시도 여부', s=>s.q8_tried, 'Q8'),
+    choiceCard('미시도 이유', s=>s.q8_reason, 'Q8-1'),
+    choiceCard('점주 알림 여부', s=>s.q8_noti, 'Q8-1'),
+    choiceCard('웹 내역 확인', s=>s.q8_web_check, 'Q8-2'),
+  ]);
+
+  html += sectionHeader('현장 멤버십 웹');
+  html += gridWrap([
+    choiceCard('QR 비치 여부', s=>s.q9_qr, 'Q9'),
+    choiceCard('QR 스캔 결과', s=>s.q9_qr_scan, 'Q9-1'),
+    choiceCard('QR 없이 접속 방법', s=>s.q9_access, 'Q9-1'),
+    choiceCard('현장 멤버십 웹 사용', s=>s.q9_used, 'Q10'),
+    scaleCard('웹 직관성', s=>s.q9_intuitive, 'Q10-1', '전혀 아님', '매우 직관적'),
+    scaleCard('웹 편리성', s=>s.q9_easy, 'Q10-2', '매우 불편', '매우 편리'),
+  ]);
+
+  html += sectionHeader('쿠폰');
+  html += gridWrap([
+    choiceCard('쿠폰 사용 여부', s=>s.q10, 'Q10'),
+    scaleCard('쿠폰 사용 난이도', s=>s.q11, 'Q11', '매우 어려움', '매우 쉬움'),
+  ]);
+
+  html += sectionHeader('전반적 만족도');
+  html += gridWrap([
+    scaleCard('전반적인 서비스 만족도', s=>s.q12, 'Q12', '매우 불만족', '매우 만족'),
+  ]);
+
+  if (freeTexts.length) {
+    html += sectionHeader('자유 의견');
+    html += `<div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12);margin-bottom:16px;overflow:hidden;">
+      <button onclick="toggleFreeText(this)" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border:none;background:none;cursor:pointer;text-align:left;">
+        <div>
+          <div style="font-size:11px;color:#5f6368;margin-bottom:2px;">Q13</div>
+          <div style="font-size:15px;font-weight:500;color:#202124;">개선이 필요하다고 느낀 점이나 추가 기능 제안</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:12px;">
+          <span style="font-size:12px;color:#5f6368;">${freeTexts.length}개</span>
+          <span class="ft-arrow" style="font-size:16px;color:#5f6368;transition:transform 0.2s;">▼</span>
+        </div>
+      </button>
+      <div class="ft-body" style="display:none;padding:0 24px 16px;">
+        ${freeTexts.map((d,i) => `
+          <div style="padding:12px 0;${i>0?'border-top:1px solid #f1f3f4':''}">
+            <div style="font-size:13px;color:#202124;line-height:1.6;">${d.text}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// 날짜 표시 — 모든 헤더에 일괄 적용
+const today = new Date();
+const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+document.getElementById('navDate').textContent = todayStr;
+document.querySelectorAll('.header-date').forEach(el => el.textContent = todayStr);
+
+// 날짜 바뀌면 신청 내역 자동 초기화
+const savedDate = localStorage.getItem('mySignupDate');
+if (savedDate !== todayStr) {
+  localStorage.removeItem('mySignup');
+  localStorage.setItem('mySignupDate', todayStr);
+}
+
+renderScales();
+
+// ══════════════════════════════════════════════
+// Firebase 초기화
+// ══════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyBc1cFRmGoBldG0CcqI1TmxbYjU3Eh5oc4",
+  authDomain: "dangolup-test.firebaseapp.com",
+  databaseURL: "https://dangolup-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "dangolup-test",
+  storageBucket: "dangolup-test.firebasestorage.app",
+  messagingSenderId: "380825764626",
+  appId: "1:380825764626:web:7a2453f0390a87363069cb"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 팀 슬롯 정의
+const SLOTS = [
+  { id:'S01', store:'박가부대 구로에이스하이엔드 2차점',  location:'정문 방향 길건너 건물 1층', type:'식당' },
+  { id:'S02', store:'92소 명품한우(에이스하이엔드지점)', location:'에이스하이앤드타워1차 스타벅스 옆', type:'식당' },
+  { id:'S03', store:'오징어 맛집',                       location:'쉐라톤 포포인트 호텔 옆 건물 지하 1층', type:'식당' },
+  { id:'S04', store:'영향',                              location:'금천구 남부순환로108길 7 1층', type:'식당' },
+  { id:'S05', store:'텐퍼센트커피 구로하이엔드타워 2차점', location:'정문 방향 길건너 건물 1층', type:'카페' },
+  { id:'S06', store:'텐퍼센트커피 구로하이엔드타워 2차점', location:'정문 방향 길건너 건물 1층', type:'카페' },
+  { id:'S07', store:'소림사 구로디지털점',                location:'정문 방향 넷마블 길건너 건물 1층', type:'카페' },
+  { id:'S08', store:'소림사 구로디지털점',                location:'정문 방향 넷마블 길건너 건물 1층', type:'카페' },
+  { id:'S09', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
+  { id:'S10', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
+  { id:'S11', store:'코앤커피',                          location:'에이스하이앤드타워1차 구내식당 옆', type:'카페' },
+];
+
+let selectedSlotId = null;
+
+function initSignup() {
+  const listEl = document.getElementById('signupList');
+  listEl.innerHTML = '';
+
+  // 식당 / 카페 섹션으로 나눠서 렌더
+  ['식당', '카페'].forEach(type => {
+    const desc = type === '식당'
+      ? '아래 매장에서 단골UP을 이용해 점심을 드세요 🍱'
+      : '점심은 자유롭게 먹고, 아래 매장에서 단골UP을 이용해 커피를 마셔요 ☕';
+    const section = document.createElement('div');
+    section.innerHTML = `
+      <div style="padding:20px 20px 6px;">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:-0.03em;">${type} 테스트</div>
+        <div style="font-size:13px;color:var(--ink-4);letter-spacing:-0.01em;">${desc}</div>
+      </div>`;
+    listEl.appendChild(section);
+
+    SLOTS.filter(s => s.type === type).forEach((slot, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'slot-btn';
+      btn.id = `slot-btn-${slot.id}`;
+      const sameStoreSlots = SLOTS.filter(s=>s.store===slot.store);
+      const teamLabel = sameStoreSlots.length > 1 ? ` ${sameStoreSlots.indexOf(slot)+1}팀` : '';
+      btn.innerHTML = `
+        <div class="slot-btn-content">
+          <div class="slot-btn-name">${slot.store}${teamLabel}</div>
+          <div class="slot-btn-location">📍 ${slot.location}</div>
+          <div class="slot-btn-meta">
+            <span class="slot-count" id="slot-count-${slot.id}">0명 신청</span>
+            <span class="slot-members" id="slot-members-${slot.id}"></span>
+          </div>
+        </div>
+        <div class="slot-chevron">›</div>`;
+      btn.onclick = () => openModal(slot.id);
+      listEl.appendChild(btn);
+    });
+  });
+
+  // 이미 신청한 경우 UI 복원
+  updateMySlotUI();
+
+  // Firebase 실시간 구독
+  db.ref(`slots/${todayStr}`).on('value', snapshot => {
+    const data = snapshot.val() || {};
+    const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
+    const mySlotIds = myList.map(m => m.slotId);
+    SLOTS.forEach(slot => {
+      const members = data[slot.id] ? Object.values(data[slot.id]) : [];
+      const count = members.length;
+      const countEl = document.getElementById(`slot-count-${slot.id}`);
+      const membersEl = document.getElementById(`slot-members-${slot.id}`);
+      const isMySlot = mySlotIds.includes(slot.id);
+      if (countEl) {
+        countEl.textContent = count ? `${count}명 신청` : '아직 신청 없음';
+        countEl.style.display = isMySlot ? 'none' : '';
+      }
+      if (membersEl) membersEl.textContent = members.map(m=>m.team).join(', ');
+    });
+    updateMySlotUI();
+  });
+}
+
+function openModal(slotId) {
+  selectedSlotId = slotId;
+  const slot = SLOTS.find(s => s.id === slotId);
+  document.getElementById('modalStoreName').textContent = slot.store;
+  document.getElementById('modalStoreSub').textContent = `📍 ${slot.location}`;
+  document.getElementById('modalTeamInput').value = '';
+  document.getElementById('signupModal').classList.add('show');
+  setTimeout(() => document.getElementById('modalTeamInput').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('signupModal').classList.remove('show');
+  selectedSlotId = null;
+}
+
+function confirmSignup() {
+  const team = document.getElementById('modalTeamInput').value.trim();
+  if (!team) { showToast('소속/팀을 입력해 주세요'); return; }
+
+  const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
+  if (myList.length >= 2) { showToast('하루 최대 2곳까지 신청 가능해요'); return; }
+  if (myList.find(m => m.slotId === selectedSlotId)) { showToast('이미 신청한 매장이에요'); return; }
+
+  db.ref(`slots/${todayStr}/${selectedSlotId}`).once('value', snapshot => {
+    const data = snapshot.val() || {};
+    const members = Object.values(data);
+
+    if (members.find(m => m.team === team)) {
+      showToast('이미 신청된 팀이에요'); return;
+    }
+
+    db.ref(`slots/${todayStr}/${selectedSlotId}`).push({ team, ts: Date.now() })
+      .then(() => {
+        myList.push({ slotId: selectedSlotId, team });
+        localStorage.setItem('mySignup', JSON.stringify(myList));
+        showToast(`신청 완료!`);
+        closeModal();
+        updateMySlotUI();
+      });
+  });
+}
+
+function updateMySlotUI() {
+  const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
+  if (!myList.length) return;
+  const mySlotIds = myList.map(m => m.slotId);
+  SLOTS.forEach(slot => {
+    const btn = document.getElementById(`slot-btn-${slot.id}`);
+    if (!btn) return;
+    if (mySlotIds.includes(slot.id)) {
+      btn.classList.add('my-slot');
+      const meta = btn.querySelector('.slot-btn-meta');
+      const countEl = document.getElementById(`slot-count-${slot.id}`);
+      if (countEl) countEl.style.display = 'none';
+      if (meta && !meta.querySelector('.slot-done-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'slot-done-badge';
+        badge.textContent = '✓ 신청완료';
+        meta.prepend(badge);
+      }
+    }
+  });
+}
+
+function showEntryPage(page) {
+  document.getElementById('page-entry').style.display = page === 'entry' ? 'block' : 'none';
+  document.getElementById('page-signup').style.display = page === 'signup' ? 'block' : 'none';
+  document.getElementById('page-store-select').style.display = page === 'store-select' ? 'block' : 'none';
+  if (page === 'signup') initSignup();
+}
+
+// 진입
+if (new URLSearchParams(location.search).get('admin') === '1') {
+  initAdmin();
+} else {
+  showEntryPage('entry');
+}
+</script>
+</body>
+</html>
