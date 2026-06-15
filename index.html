@@ -474,6 +474,7 @@
     <div class="modal-title" id="modalStoreName"></div>
     <div class="modal-sub" id="modalStoreSub"></div>
     <input class="modal-input" id="modalTeamInput" placeholder="소속/팀 (예: 페이코/비즈그로스팀)" maxlength="30">
+    <input class="modal-input" id="modalCountInput" type="number" min="1" max="20" placeholder="참여 인원 수 (예: 5)" style="margin-top:8px;">
     <button class="modal-confirm" onclick="confirmSignup()">신청하기</button>
     <button class="modal-cancel" onclick="closeModal()">취소</button>
   </div>
@@ -1551,7 +1552,11 @@ function renderAdminResult(el, data) {
 
   let html = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;scrollbar-width:none;">${chips}</div>`;
 
-  Object.entries(data).forEach(([storeKey, submissions]) => {
+  Object.entries(data).sort(([, a], [, b]) => {
+    const nameA = Object.values(a)[0]?.store || '';
+    const nameB = Object.values(b)[0]?.store || '';
+    return nameA.localeCompare(nameB, 'ko');
+  }).forEach(([storeKey, submissions]) => {
     const submissionList = Object.values(submissions);
     const storeName = submissionList[0]?.store || storeKey;
     const show = currentResultStore === '__all__' || currentResultStore === storeKey;
@@ -1569,17 +1574,34 @@ function renderAdminResult(el, data) {
     html += `<div class="result-store-section" data-store="${storeKey}" style="display:${show ? 'block' : 'none'};margin-bottom:24px;">`;
 
     // 가게 헤더 카드
+    const totalDone = totalPass + totalFail;
+    const totalAll = totalPass + totalFail + totalSkip + totalNotDone;
+    const passRate = totalDone > 0 ? Math.round(totalPass / totalDone * 100) : 0;
+    const rateColor = passRate >= 80 ? '#01a058' : passRate >= 50 ? '#f59e0b' : '#dc2626';
+
     html += `
     <div style="background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${storeName}</div>
         <div style="font-size:12px;color:var(--ink-4);">제출 ${submissionList.length}명</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <span style="background:rgba(1,160,88,0.1);color:#01a058;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">Pass ${totalPass}</span>
-        <span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">Fail ${totalFail}</span>
-        ${totalSkip ? `<span style="background:rgba(0,0,0,0.06);color:var(--ink-4);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">해당없음 ${totalSkip}</span>` : ''}
-        ${totalNotDone ? `<span style="background:rgba(0,0,0,0.04);color:var(--ink-4);font-size:12px;padding:3px 10px;border-radius:20px;">미입력 ${totalNotDone}</span>` : ''}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div style="font-size:24px;font-weight:700;color:${rateColor};min-width:52px;">${passRate}%</div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-4);margin-bottom:4px;">
+            <span>테스트 ${totalDone}건 중 ${totalPass}건 통과</span>
+            <span>${totalSkip ? `제외 ${totalSkip}` : ''}${totalSkip && totalNotDone ? ' · ' : ''}${totalNotDone ? `<span style="color:#f59e0b;">미입력 ${totalNotDone}</span>` : ''}</span>
+          </div>
+          <div style="background:#f1f3f4;border-radius:6px;height:10px;overflow:hidden;display:flex;">
+            <div style="background:#01a058;height:100%;width:${totalAll > 0 ? Math.round(totalPass/totalAll*100) : 0}%;transition:width 0.3s;"></div>
+            <div style="background:#dc2626;height:100%;width:${totalAll > 0 ? Math.round(totalFail/totalAll*100) : 0}%;transition:width 0.3s;"></div>
+            <div style="background:#e5e7eb;height:100%;width:${totalAll > 0 ? Math.round(totalSkip/totalAll*100) : 0}%;"></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:5px;font-size:11px;">
+            <span style="color:#01a058;font-weight:600;">● Pass ${totalPass}</span>
+            <span style="color:#dc2626;font-weight:600;">● Fail ${totalFail}</span>
+          </div>
+        </div>
       </div>
     </div>`;
 
@@ -1592,17 +1614,29 @@ function renderAdminResult(el, data) {
       const notDone = Object.values(scenarios).filter(s => !s.result || s.result === '미입력').length;
       const timeStr = d.ts ? d.ts.split(' ').slice(-1)[0] : '';
 
+      const done = pass + fail;
+      const all = pass + fail + skip + notDone;
+      const rate = done > 0 ? Math.round(pass / done * 100) : 0;
+      const rColor = rate >= 80 ? '#01a058' : rate >= 50 ? '#f59e0b' : '#dc2626';
+
       html += `
       <div style="background:#f8f9fa;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:8px;margin-left:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div style="font-size:13px;font-weight:700;color:var(--ink-2);">사용자 ${idx + 1}</div>
-          <div style="font-size:11px;color:var(--ink-4);">${timeStr}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:15px;font-weight:700;color:${rColor};">${rate}%</span>
+            <span style="font-size:11px;color:var(--ink-4);">${timeStr}</span>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-          <span style="background:rgba(1,160,88,0.1);color:#01a058;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">Pass ${pass}</span>
-          <span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">Fail ${fail}</span>
-          ${skip ? `<span style="background:rgba(0,0,0,0.06);color:var(--ink-4);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;">해당없음 ${skip}</span>` : ''}
-          ${notDone ? `<span style="background:rgba(0,0,0,0.04);color:var(--ink-4);font-size:11px;padding:2px 8px;border-radius:20px;">미입력 ${notDone}</span>` : ''}
+        <div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;display:flex;margin-bottom:8px;">
+          <div style="background:#01a058;height:100%;width:${all > 0 ? Math.round(pass/all*100) : 0}%;"></div>
+          <div style="background:#dc2626;height:100%;width:${all > 0 ? Math.round(fail/all*100) : 0}%;"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="color:#01a058;font-size:11px;font-weight:600;">Pass ${pass}/${done}</span>
+          <span style="color:#dc2626;font-size:11px;font-weight:600;">Fail ${fail}</span>
+          ${skip ? `<span style="color:var(--ink-4);font-size:11px;">해당없음 ${skip}</span>` : ''}
+          ${notDone ? `<span style="color:#f59e0b;font-size:11px;">미입력 ${notDone}</span>` : ''}
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${Object.values(scenarios).some(s => s.note && s.result !== 'na') ? '8px' : '0'};">
           ${Object.entries(scenarios).map(([id, s]) => {
@@ -1869,6 +1903,10 @@ function initSignup() {
     listEl.appendChild(section);
 
     SLOTS.filter(s => s.type === type).forEach((slot, idx) => {
+      const wrap = document.createElement('div');
+      wrap.id = `slot-wrap-${slot.id}`;
+      wrap.style.cssText = 'position:relative;';
+
       const btn = document.createElement('button');
       btn.className = 'slot-btn';
       btn.id = `slot-btn-${slot.id}`;
@@ -1885,7 +1923,8 @@ function initSignup() {
         </div>
         <div class="slot-chevron">›</div>`;
       btn.onclick = () => openModal(slot.id);
-      listEl.appendChild(btn);
+      wrap.appendChild(btn);
+      listEl.appendChild(wrap);
     });
   });
 
@@ -1907,7 +1946,7 @@ function initSignup() {
         countEl.textContent = count ? `${count}명 신청` : '아직 신청 없음';
         countEl.style.display = isMySlot ? 'none' : '';
       }
-      if (membersEl) membersEl.textContent = members.map(m=>m.team).join(', ');
+      if (membersEl) membersEl.textContent = members.map(m => m.count ? `${m.team} (${m.count}명)` : m.team).join(', ');
     });
     updateMySlotUI();
   });
@@ -1919,6 +1958,7 @@ function openModal(slotId) {
   document.getElementById('modalStoreName').textContent = slot.store;
   document.getElementById('modalStoreSub').textContent = `📍 ${slot.location}`;
   document.getElementById('modalTeamInput').value = '';
+  document.getElementById('modalCountInput').value = '';
   document.getElementById('signupModal').classList.add('show');
   setTimeout(() => document.getElementById('modalTeamInput').focus(), 100);
 }
@@ -1930,7 +1970,9 @@ function closeModal() {
 
 function confirmSignup() {
   const team = document.getElementById('modalTeamInput').value.trim();
+  const count = parseInt(document.getElementById('modalCountInput').value) || 0;
   if (!team) { showToast('소속/팀을 입력해 주세요'); return; }
+  if (!count || count < 1) { showToast('참여 인원 수를 입력해 주세요'); return; }
 
   const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
   if (myList.length >= 2) { showToast('하루 최대 2곳까지 신청 가능해요'); return; }
@@ -1944,9 +1986,9 @@ function confirmSignup() {
       showToast('이미 신청된 팀이에요'); return;
     }
 
-    db.ref(`slots/${todayStr}/${selectedSlotId}`).push({ team, ts: Date.now() })
-      .then(() => {
-        myList.push({ slotId: selectedSlotId, team });
+    db.ref(`slots/${todayStr}/${selectedSlotId}`).push({ team, count, ts: Date.now() })
+      .then(ref => {
+        myList.push({ slotId: selectedSlotId, team, firebaseKey: ref.key });
         localStorage.setItem('mySignup', JSON.stringify(myList));
         showToast(`신청 완료!`);
         closeModal();
@@ -1957,12 +1999,12 @@ function confirmSignup() {
 
 function updateMySlotUI() {
   const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
-  if (!myList.length) return;
   const mySlotIds = myList.map(m => m.slotId);
   SLOTS.forEach(slot => {
     const btn = document.getElementById(`slot-btn-${slot.id}`);
     if (!btn) return;
-    if (mySlotIds.includes(slot.id)) {
+    const myEntry = myList.find(m => m.slotId === slot.id);
+    if (myEntry) {
       btn.classList.add('my-slot');
       const meta = btn.querySelector('.slot-btn-meta');
       const countEl = document.getElementById(`slot-count-${slot.id}`);
@@ -1973,8 +2015,60 @@ function updateMySlotUI() {
         badge.textContent = '✓ 신청완료';
         meta.prepend(badge);
       }
+      // 취소 버튼 (wrap에 추가)
+      const wrap = document.getElementById(`slot-wrap-${slot.id}`);
+      if (wrap && !wrap.querySelector('.slot-cancel-btn')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'slot-cancel-btn';
+        cancelBtn.textContent = '신청 취소';
+        cancelBtn.style.cssText = `
+          position:absolute;top:14px;right:16px;
+          padding:4px 10px;border-radius:20px;border:none;
+          background:#dc2626;color:#fff;cursor:pointer;
+          font-size:11px;font-weight:600;letter-spacing:-0.01em;z-index:1;
+        `;
+        cancelBtn.onclick = () => cancelSignup(slot.id);
+        wrap.appendChild(cancelBtn);
+      }
+    } else {
+      btn.classList.remove('my-slot');
     }
   });
+}
+
+function cancelSignup(slotId) {
+  if (!confirm('신청을 취소할까요?')) return;
+  const myList = JSON.parse(localStorage.getItem('mySignup') || '[]');
+  const myEntry = myList.find(m => m.slotId === slotId);
+  if (!myEntry) return;
+
+  const remove = () => {
+    const updated = myList.filter(m => m.slotId !== slotId);
+    localStorage.setItem('mySignup', JSON.stringify(updated));
+    // 뱃지·취소버튼 제거
+    const btn = document.getElementById(`slot-btn-${slotId}`);
+    const wrap = document.getElementById(`slot-wrap-${slotId}`);
+    if (btn) {
+      btn.classList.remove('my-slot');
+      btn.querySelector('.slot-done-badge')?.remove();
+      const countEl = document.getElementById(`slot-count-${slotId}`);
+      if (countEl) countEl.style.display = '';
+    }
+    wrap?.querySelector('.slot-cancel-btn')?.remove();
+    showToast('신청이 취소됐어요');
+  };
+
+  if (myEntry.firebaseKey) {
+    db.ref(`slots/${todayStr}/${slotId}/${myEntry.firebaseKey}`).remove().then(remove);
+  } else {
+    // 키가 없는 경우 팀명으로 찾아서 삭제
+    db.ref(`slots/${todayStr}/${slotId}`).once('value', snapshot => {
+      const data = snapshot.val() || {};
+      const key = Object.entries(data).find(([,v]) => v.team === myEntry.team)?.[0];
+      if (key) db.ref(`slots/${todayStr}/${slotId}/${key}`).remove().then(remove);
+      else remove();
+    });
+  }
 }
 
 function showEntryPage(page) {
