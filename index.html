@@ -2205,10 +2205,10 @@ function renderAdminResult(el, data) {
 // ── AI 분석 ──
 function renderAdminAI(el, resultData, allSubmissions) {
   const apiKey = localStorage.getItem('claudeApiKey') || '';
+  const hasKey = !!apiKey;
 
-  el.innerHTML = `
-  <div style="max-width:640px;margin:0 auto;">
-    <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:16px;margin-bottom:16px;">
+  const keySection = hasKey ? `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:16px;margin-bottom:12px;">
       <div style="font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:8px;">🔑 Anthropic API Key</div>
       <div style="display:flex;gap:8px;">
         <input id="aiApiKeyInput" type="password" value="${apiKey}" placeholder="sk-ant-..." style="flex:1;padding:9px 12px;border:1px solid var(--line-soft);border-radius:8px;font-size:13px;">
@@ -2216,8 +2216,74 @@ function renderAdminAI(el, resultData, allSubmissions) {
       </div>
       <div style="font-size:11px;color:var(--ink-4);margin-top:6px;">키는 이 기기 브라우저에만 저장돼요</div>
     </div>
-    <button onclick="runAIAnalysis()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;">✨ AI 분석 시작</button>
-    <div id="aiResult"></div>
+    <button onclick="runAIAnalysis()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;">✨ AI 분석 실행</button>` : '';
+
+  el.innerHTML = `
+  <div style="max-width:640px;margin:0 auto;">
+    ${keySection}
+    <div id="aiResult">
+      <div style="text-align:center;padding:32px 0;color:var(--ink-4);font-size:13px;">
+        <div style="font-size:28px;margin-bottom:8px;">🤖</div>
+        저장된 분석 결과를 불러오는 중...
+      </div>
+    </div>
+  </div>`;
+
+  // Firebase에서 저장된 결과 불러오기
+  db.ref('ai_analysis/latest').once('value').then(snap => {
+    const saved = snap.val();
+    if (saved) {
+      renderAIResultCards(saved.parsed, saved.ts);
+    } else {
+      document.getElementById('aiResult').innerHTML = `
+        <div style="text-align:center;padding:40px 0;color:var(--ink-4);font-size:13px;">
+          <div style="font-size:32px;margin-bottom:10px;">📭</div>
+          아직 저장된 분석 결과가 없어요${hasKey ? '<br><span style="font-size:12px;">위 버튼을 눌러 분석을 시작해보세요</span>' : ''}
+        </div>`;
+    }
+  });
+}
+
+function renderAIResultCards(parsed, ts) {
+  const resultEl = document.getElementById('aiResult');
+  if (!resultEl || !parsed) return;
+
+  const statusConfig = {
+    good:    { bg: '#f0fdf4', border: '#86efac', dot: '#22c55e', label: '양호' },
+    warning: { bg: '#fffbeb', border: '#fcd34d', dot: '#f59e0b', label: '주의' },
+    danger:  { bg: '#fef2f2', border: '#fca5a5', dot: '#ef4444', label: '대응필요' },
+  };
+
+  const sectionCards = (parsed.sections || []).map(s => {
+    const cfg = statusConfig[s.status] || statusConfig.warning;
+    const pointsHtml = (s.points || []).map(p =>
+      `<div style="display:flex;gap:8px;margin-bottom:6px;">
+        <span style="color:${cfg.dot};flex-shrink:0;margin-top:1px;">•</span>
+        <span style="font-size:13px;color:var(--ink-2);line-height:1.6;">${p}</span>
+      </div>`
+    ).join('');
+    return `
+    <div style="background:${cfg.bg};border:1px solid ${cfg.border};border-radius:14px;padding:16px 18px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:20px;line-height:1;">${s.icon || '📌'}</span>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--ink-1);">${s.title}</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:1px;">${s.verdict || ''}</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:${cfg.dot};color:#fff;">${cfg.label}</span>
+      </div>
+      <div style="margin-bottom:10px;">${pointsHtml}</div>
+      ${s.action ? `<div style="background:rgba(0,0,0,0.05);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink-1);font-weight:600;">→ ${s.action}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  resultEl.innerHTML = `
+  <div>
+    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;padding:16px 18px;margin-bottom:14px;color:#fff;">
+      <div style="font-size:11px;font-weight:600;opacity:0.8;margin-bottom:4px;">✨ AI 분석 결과 · ${ts || ''}</div>
+      <div style="font-size:15px;font-weight:700;line-height:1.5;">${parsed.summary || ''}</div>
+    </div>
+    ${sectionCards}
   </div>`;
 }
 
@@ -2278,70 +2344,90 @@ function buildAnalysisPrompt(resultData, allSubmissions) {
 
   return `당신은 서비스 기획자를 위한 현장 테스트 데이터 분석가입니다.
 아래는 단골UP(PAYCO 기반 오피스 상권 픽업·현장취식 O2O 멤버십 서비스)의 사내 현장 테스트 결과입니다.
-총 제출 ${allSubmissions.length}건, 사용자 후기 ${n}건을 기반으로 분석해주세요.
+총 제출 ${allSubmissions.length}건, 사용자 후기 ${n}건 기반입니다.
 
-## 서비스 개요
+[서비스 개요]
 - 오피스 상권 근처 식당·카페 대상 단골 멤버십 서비스
 - PAYCO 앱: 자동 적립, 직접 쿠폰 사용, 사전 픽업 주문
 - 현장 멤버십 웹: 수기 적립 요청, 사장님 쿠폰 확인, 앱 미설치자 대상
 - 쿠폰 구조: 사용하면 새 쿠폰 재발급 (무한 반복)
 - 내부 논쟁: 앱 중심 전략 vs 웹 완결성 전략
 
-## 시나리오 통과율
+[경쟁 구도]
+경쟁사를 영역별로 구분하면:
+
+앱 주문(픽업·배달) 경쟁:
+- 배민: 배달 압도적 1위, 픽업 있음. 수수료 높고 오프라인 멤버십 없음. 대형 브랜드 중심
+- 쿠팡이츠: 배달·픽업, 로켓 연계 혜택. 오프라인 멤버십 없음
+
+QR 기반 경쟁:
+- 카카오 춘식이 QR: QR 스탬프 적립, 카카오톡 채널 연동 재방문 알림 강점. 쿠폰/주문 없음
+- 토스플레이스: QR 결제·적립, POS 연동. 소상공인 친화적이고 현장에서 이미 도입률 높음
+- 네이버 스마트플레이스: QR 주문·예약·멤버십. 트래픽 압도적
+
+멤버십·적립 경쟁:
+- 도도포인트: POS 연동 스탬프·포인트, 가맹점 수 많음. 소비자 앱 없어 사용자 주도성 낮음
+- 네이버 스마트플레이스: 영수증 리뷰 기반 멤버십. 단골 개념 약함
+- 토스플레이스: 결제 연동 자동 적립, 소상공인 정산까지 한번에
+
+현장 웹 + 수기적립 경쟁:
+- 토스플레이스: POS 에이전트 프로그램으로 현장 결제·적립·쿠폰 통합. 단골UP과 가장 직접 겹치는 영역
+
+핵심: 토스플레이스는 앱주문 제외 전 영역(QR·멤버십·현장웹·수기적립·POS연동)을 커버하는 가장 강력한 경쟁자. 단골UP도 POS 에이전트 프로그램 도입 예정으로 정면 충돌 예상
+단골UP 포지션: PAYCO 결제 자동 적립 + 픽업 주문 + 무한재발급 쿠폰 + 오피스 상권 특화.
+
+[내부 논쟁: PAYCO 기반이 강점인가 약점인가]
+강점 주장: PAYCO 결제 연동으로 자동 적립 가능(경쟁사 대부분 수동), NHN 인프라·결제 신뢰도, 기존 PAYCO 유저 기반 활용 가능
+약점 주장: PAYCO 앱 설치라는 추가 진입장벽, PAYCO 자체 인지도·사용률이 카카오페이·토스·네이버페이 대비 낮음, PAYCO를 모르는 가맹점주에게 설명 비용 발생
+중립 주장: 오피스 상권 직장인은 PAYCO 인지율이 일반 대비 높을 수 있음(법인카드·복지포인트 연동), 하지만 MZ세대 중심으론 토스·카카오가 기본값
+이 논쟁을 테스트 데이터(앱설치장벽 응답, 기능차이 인지 여부, 앱감수 이유)로 분석해 결론을 내려야 함
+
+[시나리오 통과율]
 ${scenarioSummary}
 
-## 사용자 후기 집계 (n=${n})
-
-### 앱/웹 전략 판단
-- 앱 설치 진입 장벽 예상: ${dist('barrier')}
-- 웹 완결성 평가: ${dist('web_enough')}
-- 동료 소개 방식: ${dist('intro')}
-- 앱 설치 감수 이유: ${dist('app_worth')}
-- 앱/웹 기능 차이 인지: ${dist('channel')}
-
-### 쿠폰 경험
-- 쿠폰 사용 여부: ${dist('q10')}
-- 쿠폰 사용 난이도: ${avg('q11')} / 5점
-- 쿠폰 체감 매력도: ${avg('coupon_appeal')} / 5점
-- 쿠폰 재방문 동인: ${dist('coupon_revisit')}
-- 재발급 구조 인지: ${dist('coupon_reissue')}
-
-### 서비스 가치
-- 앱 주문 직관성: ${avg('q3')} / 5점
-- 멤버십 재방문 영향: ${avg('revisit')} / 5점
-- 저녁·주말 이용 의향: ${avg('offpeak')} / 5점
-- 전반적 만족도: ${avg('q12')} / 5점
-
-### NPS (0~5점)
-- 평균: ${npsAvg}점 / NPS 스코어: ${npsScore}
-- 추천(4~5): ${npsPromoter}명 / 비추(0~2): ${npsDetractor}명
-
-### 가맹점 확장
-- 확장 희망 이유: ${dist('expand_why')}
-- 확장 희망 업종: ${multiDist('expand')}
-
-### QR 오더 수요
-- QR 웹 주문 의향 (앱 없이): ${dist('qr_web')}
-- QR 주문 시 앱 설치 의향: ${dist('qr_app')}
-
-### 자유 의견
-${notes.length ? notes.map((t,i)=>`${i+1}. ${t}`).join('\n') : '없음'}
+[사용자 후기 n=${n}]
+앱/웹 전략: 앱설치장벽=${dist('barrier')} | 웹완결성=${dist('web_enough')} | 소개방식=${dist('intro')} | 앱감수이유=${dist('app_worth')} | 기능차이인지=${dist('channel')}
+쿠폰: 사용여부=${dist('q10')} | 난이도=${avg('q11')} | 매력도=${avg('coupon_appeal')} | 재방문동인=${dist('coupon_revisit')} | 재발급인지=${dist('coupon_reissue')}
+서비스가치: 앱직관성=${avg('q3')} | 멤버십재방문=${avg('revisit')} | 오프피크=${avg('offpeak')} | 만족도=${avg('q12')}
+NPS: 평균=${npsAvg}/5 | 스코어=${npsScore} | 추천${npsPromoter}명/비추${npsDetractor}명
+확장: 이유=${dist('expand_why')} | 업종=${multiDist('expand')}
+QR오더: 웹주문의향=${dist('qr_web')} | 앱설치의향=${dist('qr_app')}
+자유의견: ${notes.length ? notes.join(' / ') : '없음'}
 
 ---
 
-## 분석 요청
+아래 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요.
 
-다음 6가지 관점에서 한국어로 분석해주세요. 각 섹션은 **굵은 제목**으로 구분하고, 데이터 수치를 근거로 명확하게 서술해주세요.
+{
+  "summary": "전체 인사이트 한 줄 요약 (50자 이내)",
+  "sections": [
+    {
+      "title": "섹션 제목",
+      "icon": "이모지 1개",
+      "status": "good 또는 warning 또는 danger",
+      "verdict": "핵심 판단 한 문장 (30자 이내)",
+      "points": ["구체적 인사이트1", "구체적 인사이트2", "구체적 인사이트3"],
+      "action": "즉시 해야 할 액션 1가지"
+    }
+  ]
+}
 
-1. **서비스 기본 완성도** — 시나리오 통과율 기반으로 어떤 기능이 안정적이고 어디가 취약한지
-2. **쿠폰 전략 유효성** — 쿠폰이 실제 재방문 동인이 되고 있는지, 재발급 구조가 사용자에게 인지되고 있는지
-3. **앱 vs 웹 전략 판단** — 진입 장벽 인식, 웹 완결성 평가, 소개 방식 데이터를 종합해 어느 방향이 더 유효한지
-4. **QR 오더 전략 방향** — QR 웹 주문 의향과 앱 설치 의향 데이터를 종합해 웹 QR / 앱 QR / 둘 다 중 어떤 방향이 맞는지 판단. 현재 픽업+현장취식 UX의 어색함도 고려할 것
-5. **오피스 상권 서비스 효과** — NPS, 재방문 의향, 저녁·주말 이용 의향으로 본 오피스 상권 적합성
-6. **가맹점 카테고리 확장 시그널** — 확장 희망 이유와 업종 데이터로 본 확장 우선순위 제안
-7. **현재 기능 개선 포인트** — 자유 의견 + 실패 시나리오 + 낮은 점수 항목 기반으로 지금 당장 고쳐야 할 것과 다음 스프린트에서 다룰 것을 구분해서 제시
+섹션은 반드시 이 9개 순서대로:
+1. 서비스 기본 완성도 — 시나리오 통과율 기반으로 안정적인 기능과 취약한 기능 구분
+2. 쿠폰 전략 유효성 — 쿠폰이 실제 재방문 동인이 되는지, 무한재발급 구조가 사용자에게 인지되는지
+3. 앱 vs 웹 전략 — 진입장벽·웹완결성·소개방식 데이터 종합해 어느 방향이 더 유효한지 판단
+4. QR 오더 방향 — 웹 QR/앱 QR/둘 다 중 어떤 방향이 맞는지. 픽업+현장취식 UX 어색함도 고려
+5. 오피스 상권 정착 전략 (icon: 🏢) — 단순 적합성 판단이 아닌, 오피스 상권에서 실제로 정착하려면 무엇이 필요한지. 점심 피크 의존도 탈피 방법, 단골 형성 조건, 가맹점 온보딩 전략 포함
+6. 주거 상권 확장 시나리오 (icon: 🏘️) — 주거 상권으로 확장 시 오피스와 달라지는 사용 패턴, 필요한 기능 변화, 쿠폰/멤버십 전략 차이, 준비해야 할 것들. 현재 데이터에서 신호가 없으면 O2O 서비스 패턴 기반으로 추정 명시
+7. 멤버십+픽업·배달 런칭 인사이트 (icon: 🚀) — 제대로 된 서비스로 런칭하려면 갖춰야 할 것들. UX 완성도, 가맹점 운영 준비도, 사용자 온보딩 흐름, 쿠폰/적립 구조, 배달 추가 시 고려사항 포함
+8. 즉시 개선 과제 — 자유의견+실패 시나리오+낮은 점수 기반으로 지금 당장 고칠 것 vs 다음 스프린트 구분
+9. PAYCO 기반 강점 vs 약점 판정 (icon: 💳) — 내부에서 의견이 분분한 "PAYCO 기반이 강점인가 약점인가"를 테스트 데이터로 판정. 앱설치 장벽 응답·기능차이 인지·앱 감수 이유 데이터를 근거로 강점/약점/조건부 중 하나로 명확히 결론. 오피스 상권 직장인 맥락에서의 PAYCO 포지션도 분석
+10. 경쟁사 대비 차별화 전략 (icon: ⚔️) — 영역별 경쟁자(앱주문: 배민·쿠팡이츠 / QR: 카카오·네이버·토스플레이스 / 멤버십: 도도포인트·네이버·토스플레이스 / 현장웹수기적립: 토스플레이스) 각각 대비 이기는 포인트와 지는 포인트 명확히 구분. 특히 토스플레이스는 전 영역 경쟁자이자 POS 에이전트까지 겹치므로 가장 비중 있게 분석. 단골UP이 집중해야 할 핵심 차별화 포인트 도출
+11. 놓치고 있는 리스크 (icon: ⚠️) — 현재 전략의 맹점, 사용자가 말하지 않은 것, 장기 위험 요인. 데이터 근거 없으면 추정 명시
 
-마지막에 **한 줄 요약**으로 전체 인사이트를 압축해주세요.`;
+5·6·7·9번은 데이터 검증을 넘어 전략 방향 제시가 목적. 구체적 액션과 우선순위까지 포함할 것.
+status는 데이터 기반으로 판단: good(긍정적), warning(주의), danger(즉시 대응 필요)
+points는 반드시 수치 근거 또는 구체적 조건 포함. "중요합니다" 같은 추상 표현 금지.`;
 }
 
 async function runAIAnalysis() {
@@ -2373,9 +2459,10 @@ async function runAIAnalysis() {
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-5',
         max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }]
+        system: '당신은 JSON만 출력하는 분석 엔진입니다. 사용자의 요청에 대해 반드시 유효한 JSON 객체만 출력하세요. 마크다운 코드블록(```), 설명 텍스트, 줄 구분선(--, ---), 표(|) 등 JSON 이외의 어떤 문자도 출력하면 안 됩니다. 첫 글자는 반드시 { 이어야 합니다.',
+        messages: [{ role: 'user', content: prompt }, { role: 'assistant', content: '{' }]
       })
     });
     if (!res.ok) {
@@ -2383,26 +2470,26 @@ async function runAIAnalysis() {
       throw new Error(err.error?.message || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const text = data.content[0].text;
+    const rawText = data.content[0].text.trim();
 
-    // 마크다운 → HTML 간단 변환
-    const html = text
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/^### (.+)$/gm, '<h4 style="font-size:13px;color:var(--ink-3);margin:16px 0 6px;">$1</h4>')
-      .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:var(--ink-1);margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--line-soft);">$1</h3>')
-      .replace(/^# (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:var(--ink-1);margin:0 0 12px;">$1</h2>')
-      .replace(/^- (.+)$/gm, '<li style="font-size:13px;color:var(--ink-2);line-height:1.7;margin-left:16px;">$1</li>')
-      .replace(/\n\n/g, '<br><br>')
-      .replace(/\n/g, '<br>');
+    // JSON 파싱
+    let parsed;
+    try {
+      // JSON 블록만 추출
+      // assistant prefill로 { 를 넣었으므로 앞에 붙여서 파싱
+      const fullText = rawText.startsWith('{') ? rawText : '{' + rawText;
+      const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : fullText);
+    } catch(parseErr) {
+      // JSON 파싱 실패 시 plain text fallback
+      resultEl.innerHTML = `<div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:20px;font-size:13px;color:var(--ink-2);white-space:pre-wrap;">${rawText}</div>`;
+      return;
+    }
 
-    resultEl.innerHTML = `
-    <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:20px;line-height:1.7;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line-soft);">
-        <div style="font-size:14px;font-weight:700;color:var(--ink-1);">✨ AI 분석 결과</div>
-        <div style="font-size:11px;color:var(--ink-4);">${new Date().toLocaleString('ko-KR')}</div>
-      </div>
-      <div style="font-size:13px;color:var(--ink-2);line-height:1.8;">${html}</div>
-    </div>`;
+    const ts = new Date().toLocaleString('ko-KR');
+    // Firebase에 결과 저장 후 카드 렌더링
+    db.ref('ai_analysis/latest').set({ parsed, ts });
+    renderAIResultCards(parsed, ts);
   } catch(e) {
     resultEl.innerHTML = `
     <div style="background:#fff3f3;border:1px solid #fca5a5;border-radius:12px;padding:16px;color:#dc2626;font-size:13px;">
