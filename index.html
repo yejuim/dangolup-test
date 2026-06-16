@@ -82,6 +82,13 @@
   .store-select-logo p { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 5px; letter-spacing: -0.01em; }
   .header-date { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.55); white-space: nowrap; padding-top: 4px; }
   .store-select-body { padding: 16px 0 64px; }
+  .case-btn { width:100%;display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line-soft);border-radius:14px;padding:18px 16px;margin-bottom:12px;cursor:pointer;text-align:left;transition:background 120ms; }
+  .case-btn:hover { background:#f7f7f7; }
+  .case-icon { font-size:28px;flex-shrink:0;width:44px;text-align:center; }
+  .case-content { flex:1; }
+  .case-title { font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.02em;margin-bottom:3px; }
+  .case-desc { font-size:13px;color:var(--ink-3); }
+  .case-arrow { font-size:20px;color:var(--ink-4);flex-shrink:0; }
   .store-btn {
     width: 100%; padding: 16px 14px 16px 20px; background: var(--card-bg);
     border: none; border-radius: 0; margin-bottom: 0;
@@ -504,6 +511,44 @@
   <div class="store-select-body" id="storeBtnList"></div>
 </div>
 
+<!-- ══ 케이스 선택 ══ -->
+<div id="page-case-select" style="display:none;max-width:480px;margin:0 auto;min-height:100vh;background:var(--canvas);">
+  <div class="store-select-header" style="display:flex;align-items:center;gap:10px;">
+    <button onclick="showCaseBack()" style="background:none;border:none;color:rgba(255,255,255,0.85);font-size:28px;font-weight:300;cursor:pointer;padding:0 6px 0 0;line-height:1;flex-shrink:0;">&#8249;</button>
+    <div class="store-select-logo" style="flex:1;">
+      <h1 id="caseStoreTitle">단골UP 현장 테스트</h1>
+      <p>오늘 어떤 방식으로 이용하셨나요?</p>
+    </div>
+    <button onclick="changeStore()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;cursor:pointer;flex-shrink:0;">매장 변경</button>
+  </div>
+  <div style="padding:20px 16px;">
+    <button class="case-btn" onclick="selectCase('pickup')">
+      <div class="case-icon">🛍️</div>
+      <div class="case-content">
+        <div class="case-title">픽업</div>
+        <div class="case-desc">앱으로 주문 후 매장에서 포장 수령</div>
+      </div>
+      <div class="case-arrow">›</div>
+    </button>
+    <button class="case-btn" onclick="selectCase('pickup_dine')">
+      <div class="case-icon">🍽️</div>
+      <div class="case-content">
+        <div class="case-title">픽업 주문 후 현장 취식</div>
+        <div class="case-desc">앱으로 주문했지만 매장에서 취식</div>
+      </div>
+      <div class="case-arrow">›</div>
+    </button>
+    <button class="case-btn" onclick="selectCase('dine')">
+      <div class="case-icon">🏪</div>
+      <div class="case-content">
+        <div class="case-title">현장 직접 주문</div>
+        <div class="case-desc">매장에서 직접 주문 후 현장 취식</div>
+      </div>
+      <div class="case-arrow">›</div>
+    </button>
+  </div>
+</div>
+
 <!-- ══ 메인 앱 ══ -->
 <div id="mainApp" class="hidden">
   <div class="nav">
@@ -556,53 +601,26 @@
         <label class="form-label">Q1. 테스트에 참여한 가맹점</label>
         <input type="text" id="u_store" readonly style="background:#f5f5f5">
       </div>
-      <div class="form-group" style="margin-bottom:0">
+      <div class="form-group" style="margin-bottom:0" id="survey-q2-wrap">
         <label class="form-label">Q2. 주문 방식</label>
         <div class="radio-group">
-          <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(픽업)"><span>앱으로 주문 (픽업)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(픽업)"><span>앱으로 주문 후 포장 수령 (픽업)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(현장취식)"><span>앱으로 주문 후 현장 취식</span></label>
           <label class="radio-opt"><input type="radio" name="u_order_type" value="앱 주문(배달)"><span>앱으로 주문 (배달)</span></label>
-          <label class="radio-opt"><input type="radio" name="u_order_type" value="현장 취식(수기 적립)"><span>현장 취식 (포스 수기 적립)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_order_type" value="현장 취식(수기 적립)"><span>매장에서 직접 주문 후 현장 취식 (포스 수기 적립)</span></label>
         </div>
       </div>
     </div>
-    <div class="form-section-title">앱 사용성</div>
-    <div class="card">
+    <div class="form-section-title" id="survey-app-title">앱 사용성</div>
+    <div class="card" id="survey-app-card">
       <div class="form-group">
         <label class="form-label">Q3. 앱에서 주문 완료까지의 과정이 쉽고 직관적이었나요?</label>
         <div class="scale-group" id="u_q3"></div>
         <div class="scale-labels"><span>매우 불편</span><span>매우 편리</span></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Q4. 주문 후 멤버십 적립 결과를 앱에서 쉽게 확인할 수 있었나요?</label>
-        <div class="scale-group" id="u_q4"></div>
-        <div class="scale-labels"><span>못 찾겠음</span><span>바로 확인됨</span></div>
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Q5. 앱 사용 중 불편하거나 헷갈렸던 점 <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
-        <div class="check-group">
-          <label class="check-opt"><input type="checkbox" name="u_q5" value="주문 과정"><span>주문 과정</span></label>
-          <label class="check-opt"><input type="checkbox" name="u_q5" value="멤버십/적립 확인"><span>멤버십/적립 확인</span></label>
-          <label class="check-opt"><input type="checkbox" name="u_q5" value="쿠폰 사용"><span>쿠폰 사용</span></label>
-          <label class="check-opt"><input type="checkbox" name="u_q5" value="특별히 없음"><span>특별히 없음</span></label>
-        </div>
-        <input type="text" style="margin-top:8px" id="u_q5_etc" placeholder="기타 (직접 입력)">
-      </div>
     </div>
-    <div class="form-section-title">멤버십</div>
-    <div class="card">
-      <div class="form-group">
-        <label class="form-label">Q6. 적립이 제대로 됐는지 확인이 쉬웠나요?</label>
-        <div class="scale-group" id="u_q6"></div>
-        <div class="scale-labels"><span>확인 어려움</span><span>매우 쉬움</span></div>
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Q7. 적립 현황이 앱 또는 웹에서 명확하게 보였나요?</label>
-        <div class="scale-group" id="u_q7"></div>
-        <div class="scale-labels"><span>전혀 명확하지 않음</span><span>매우 명확함</span></div>
-      </div>
-    </div>
-    <div class="form-section-title">포스 수기 적립</div>
-    <div class="card">
+    <div class="form-section-title" id="survey-pos-title">포스 수기 적립</div>
+    <div class="card" id="survey-pos-card">
       <div class="form-group">
         <label class="form-label">Q8. 포스 수기 적립을 시도해봤나요?</label>
         <div class="radio-group">
@@ -623,21 +641,102 @@
       </div>
       <div id="u_q8_yes_wrap" style="display:none">
         <div class="form-group">
-          <label class="form-label">Q8-1. 점주가 적립 완료 후 내역을 알려줬나요?</label>
+          <label class="form-label">Q8-1. 점주가 적립 완료 후 어떻게 알려줬나요?</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="알려줬다"><span>알려줬다</span></label>
-            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="알려주지 않았다"><span>알려주지 않았다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="상세 안내"><span>적립 금액·수량 등 상세하게 알려줬다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="간단히 됩니다"><span>"적립됐습니다" 정도로만 말했다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_noti" value="알려주지 않았다"><span>별도로 알려주지 않았다</span></label>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom:0">
+        <div class="form-group">
           <label class="form-label">Q8-2. 적립 후 현장 멤버십 웹에서 내역을 직접 확인해봤나요?</label>
           <div class="radio-group">
-            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인했다"><span>확인해 봤다</span></label>
-            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인 안 했다"><span>확인 안 했다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인했다" onclick="toggleQ8WebCheck(true)"><span>확인해 봤다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q8_web_check" value="확인 안 했다" onclick="toggleQ8WebCheck(false)"><span>확인 안 했다</span></label>
+          </div>
+        </div>
+        <div id="u_q8_web_detail_wrap" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Q8-3. 웹에서 확인한 결제 금액이 실제 결제 금액과 일치했나요?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="u_q8_amount" value="일치"><span>일치했다</span></label>
+              <label class="radio-opt"><input type="radio" name="u_q8_amount" value="불일치"><span>달랐다</span></label>
+              <label class="radio-opt"><input type="radio" name="u_q8_amount" value="확인 못함"><span>확인하지 못했다</span></label>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Q8-4. 웹에서 확인한 적립 수량(스탬프·포인트)이 예상과 일치했나요?</label>
+            <div class="radio-group">
+              <label class="radio-opt"><input type="radio" name="u_q8_stamp" value="일치"><span>일치했다</span></label>
+              <label class="radio-opt"><input type="radio" name="u_q8_stamp" value="불일치"><span>달랐다</span></label>
+              <label class="radio-opt"><input type="radio" name="u_q8_stamp" value="확인 못함"><span>확인하지 못했다</span></label>
+            </div>
           </div>
         </div>
       </div>
     </div>
+    <!-- 현장 주문 사용성 (픽업+현장취식 전용) -->
+    <div class="form-section-title" id="survey-dine-title" style="display:none">현장 주문 사용성</div>
+    <div class="card" id="survey-dine-card" style="display:none">
+      <div class="form-group">
+        <label class="form-label">QA. 언제 픽업 주문을 하셨나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_dine_when" value="방문 전" onclick="toggleDineWhen('before')"><span>매장 방문 전 미리 주문했다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_when" value="방문 후" onclick="toggleDineWhen('after')"><span>매장 방문 후 주문했다</span></label>
+        </div>
+      </div>
+      <div id="u_dine_before_wrap" style="display:none">
+        <div class="form-group">
+          <label class="form-label">QA-1. 현장 취식임을 점주에게 어떻게 알렸나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_dine_notify" value="직접 말했다"><span>도착 후 점주에게 직접 말했다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_dine_notify" value="요청사항 기재"><span>주문 시 요청사항에 기재했다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_dine_notify" value="알리지 않음"><span>별도로 알리지 않았다 (점주가 알아서 처리)</span></label>
+          </div>
+        </div>
+      </div>
+      <div id="u_dine_how_wrap" style="display:none">
+        <div class="form-group">
+          <label class="form-label">QA-1. 방문 후 어떻게 주문하게 됐나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_dine_how" value="점주 안내"><span>점주가 앱으로 주문하라고 안내해줬다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_dine_how" value="자발적 주문"><span>내가 먼저 픽업 주문 후 점주에게 알렸다</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="border-top:1px solid var(--line-soft);padding-top:16px;margin-top:4px;">
+        <label class="form-label">QB. 주문부터 수령까지 점주와 추가 소통이 몇 번 있었나요?<span style="font-size:11px;color:var(--ink-4);font-weight:400;"> (계획에 없던 소통 기준)</span></label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_dine_comm_count" value="0번"><span>0번 (소통 없이 완결)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_comm_count" value="1번"><span>1번</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_comm_count" value="2번"><span>2번</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_comm_count" value="3번 이상"><span>3번 이상</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">QC. 앱으로 주문 후 현장 취식하는 흐름이 전반적으로 자연스러웠나요?</label>
+        <div class="scale-group" id="u_dine_natural"></div>
+        <div class="scale-labels"><span>매우 어색했다</span><span>매우 자연스러웠다</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">QD. 다음에도 이 방식(앱 주문 후 현장 취식)으로 이용할 것 같나요?</label>
+        <div class="scale-group" id="u_dine_reuse"></div>
+        <div class="scale-labels"><span>전혀 아님</span><span>매우 그렇다</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">QE. 가장 불편하거나 어색했던 순간이 있다면? <span style="font-size:12px;color:var(--muted)">(선택)</span></label>
+        <input type="text" id="u_dine_pain" placeholder="자유롭게 입력해 주세요">
+      </div>
+      <div class="form-group" style="border-top:1px solid var(--line-soft);padding-top:16px;margin-top:4px;margin-bottom:0">
+        <label class="form-label">QF. 식권을 사용하셨나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_dine_sikwon" value="일괄 결제"><span>식권으로 일괄 결제 (한 명이 대표로 결제)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_sikwon" value="더치페이"><span>식권으로 각자 더치페이 (개별 주문)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_dine_sikwon" value="미사용"><span>식권 없이 결제했다</span></label>
+        </div>
+      </div>
+    </div>
+
     <div class="form-section-title">현장 멤버십 웹</div>
     <div class="card">
       <div class="form-group">
@@ -692,27 +791,195 @@
       <div class="form-group">
         <label class="form-label">Q10. 쿠폰을 사용해 봤나요? (쿠폰이 있는 가맹점)</label>
         <div class="radio-group">
-          <label class="radio-opt"><input type="radio" name="u_q10" value="앱에서 사용"><span>앱에서 사용</span></label>
-          <label class="radio-opt"><input type="radio" name="u_q10" value="모바일 웹에서 사용"><span>모바일 웹에서 사용</span></label>
-          <label class="radio-opt"><input type="radio" name="u_q10" value="쿠폰 없었음"><span>쿠폰이 없었음</span></label>
-          <label class="radio-opt"><input type="radio" name="u_q10" value="사용 안 함"><span>사용 안 했음</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="앱에서 사용" onclick="toggleCouponDetail(true)"><span>앱에서 사용</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="모바일 웹에서 사용" onclick="toggleCouponDetail(true)"><span>모바일 웹에서 사용</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="쿠폰 없었음" onclick="toggleCouponDetail(false)"><span>쿠폰이 없었음</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q10" value="사용 안 함" onclick="toggleCouponDetail(false)"><span>사용 안 했음</span></label>
+        </div>
+      </div>
+      <div id="coupon-detail-wrap" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Q11. 쿠폰 사용 과정이 쉬웠나요?</label>
+          <div class="scale-group" id="u_q11"></div>
+          <div class="scale-labels"><span>매우 어려움</span><span>매우 쉬움</span></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Q12. 쿠폰 혜택이 얼마나 매력적으로 느껴졌나요?</label>
+          <div class="scale-group" id="u_q_coupon_appeal"></div>
+          <div class="scale-labels"><span>전혀 매력 없음</span><span>매우 매력적</span></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Q13. 쿠폰이 이 매장에 다시 오고 싶게 만들었나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_revisit" value="그렇다"><span>그렇다 (쿠폰 때문에 다시 올 것 같다)</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_revisit" value="어느 정도"><span>어느 정도 (쿠폰이 플러스 요인이다)</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_revisit" value="별로"><span>별로 (쿠폰이 있어도 재방문엔 영향 없다)</span></label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Q14. 쿠폰을 사용하면 새 쿠폰이 다시 발급된다는 걸 알고 계셨나요?</label>
+          <div class="radio-group">
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_reissue" value="알고 있었다"><span>알고 있었다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_reissue" value="이번에 처음 알았다"><span>이번에 처음 알았다</span></label>
+            <label class="radio-opt"><input type="radio" name="u_q_coupon_reissue" value="몰랐다"><span>몰랐다</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">서비스 가치 분석</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q15. 멤버십 혜택이 이 매장을 다시 방문하게 만들 것 같나요?</label>
+        <div class="scale-group" id="u_q_revisit"></div>
+        <div class="scale-labels"><span>전혀 아님</span><span>매우 그렇다</span></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Q16. 단골UP이 있다면 저녁이나 주말에도 이 매장을 이용할 것 같나요?</label>
+        <div class="scale-group" id="u_q_offpeak"></div>
+        <div class="scale-labels"><span>전혀 아님</span><span>매우 그렇다</span></div>
+      </div>
+      <div class="form-group" id="survey-q15-wrap">
+        <label class="form-label" id="survey-q15-label">Q17. 미리 주문하고 도착 시간에 맞춰 픽업할 수 있다면 유용할 것 같나요?</label>
+        <div class="scale-group" id="u_q_prebook"></div>
+        <div class="scale-labels"><span>전혀 아님</span><span>매우 유용</span></div>
+      </div>
+      <!-- 현장취식 전용: 앱 미사용 이유 + 앱 사용 전환 조건 -->
+      <div class="form-group" id="survey-dine-app-why" style="display:none">
+        <label class="form-label">Q17. 오늘 PAYCO 앱으로 주문하지 않은 이유는 무엇인가요? <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_why" value="페이코 앱 미설치"><span>PAYCO 앱이 없어서</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_why" value="식권 소진 후 필요 없음"><span>식권을 다 써서 굳이 앱을 쓸 필요를 못 느꼈다</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_why" value="현장 주문이 편함"><span>앱 주문보다 현장에서 직접 주문하는 게 편해서</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_why" value="단골UP 몰랐음"><span>단골UP 서비스를 잘 몰랐다</span></label>
+        </div>
+        <input type="text" style="margin-top:8px" id="u_dine_app_why_etc" placeholder="기타 (직접 입력)">
+      </div>
+      <div class="form-group" id="survey-dine-app-when" style="display:none">
+        <label class="form-label">Q18. 어떤 경우라면 PAYCO 앱으로 주문할 것 같나요? <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_when" value="쿠폰·할인 혜택"><span>쿠폰이나 할인 혜택이 있다면</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_when" value="멤버십 적립 매력적"><span>멤버십 적립 혜택이 충분히 매력적이라면</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_when" value="기다림 없이 수령"><span>미리 주문해서 기다리지 않아도 된다면</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_when" value="무료 메뉴 가능"><span>포인트·스탬프가 쌓여 무료 메뉴를 받을 수 있다면</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_dine_app_when" value="사용 안 할 것 같음"><span>어떤 경우에도 사용하지 않을 것 같다</span></label>
+        </div>
+        <input type="text" style="margin-top:8px" id="u_dine_app_when_etc" placeholder="기타 (직접 입력)">
+      </div>
+      <div class="form-group" id="survey-q16-wrap">
+        <label class="form-label">Q18. 단골UP에 어떻게 처음 진입하셨나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_entry" value="PAYCO 앱"><span>PAYCO 앱에서 직접</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_entry" value="QR 스캔"><span>매장 QR 스캔</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_entry" value="별도 링크"><span>별도로 받은 링크</span></label>
         </div>
       </div>
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Q11. (쿠폰 사용 시) 쿠폰 사용 과정이 쉬웠나요?</label>
-        <div class="scale-group" id="u_q11"></div>
-        <div class="scale-labels"><span>매우 어려움</span><span>매우 쉬움</span></div>
+        <label class="form-label">Q19. 앱과 현장 멤버십 웹의 기능 차이를 알고 계셨나요? <span style="font-size:12px;color:var(--muted)">(앱: 자동 적립·직접 쿠폰 사용 / 웹: 수기 적립 요청·사장님 쿠폰 확인)</span></label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_channel" value="잘 알고 있었다"><span>잘 알고 있었다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_channel" value="어렴풋이 알고 있었다"><span>어렴풋이 알고 있었다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_channel" value="이번에 처음 알았다"><span>이번 테스트에서 처음 알았다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_channel" value="아직도 잘 모르겠다"><span>아직도 잘 모르겠다</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">앱 vs 웹 전략 판단</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">QA. 일반 고객 입장에서 "PAYCO 앱을 설치해야 쓸 수 있다"는 게 진입 장벽이 될 것 같나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_barrier" value="대부분 그냥 깔 것"><span>대부분 그냥 깔 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_barrier" value="일부 포기할 것"><span>일부는 귀찮아서 포기할 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_barrier" value="상당수 포기할 것"><span>상당수가 포기할 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_barrier" value="거의 다 포기할 것"><span>거의 다 포기할 것 같다</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">QB. 웹(별도 앱 설치 없이 링크 접속)만으로도 단골UP을 충분히 이용할 수 있을 것 같나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_web_enough" value="웹으로 충분"><span>충분하다 (앱 없어도 됨)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_web_enough" value="앱이 훨씬 낫다"><span>웹도 되긴 하지만 앱이 훨씬 낫다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_web_enough" value="웹으로 불충분"><span>웹만으로는 불충분하다</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">QC. 주변 동료에게 단골UP을 소개한다면 어떻게 안내할 것 같나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_intro" value="앱 설치 유도"><span>"PAYCO 앱 깔고 써봐"</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_intro" value="웹 링크 공유"><span>"이 링크 접속해봐"</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_intro" value="소개 안 할 것"><span>소개하지 않을 것 같다</span></label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">QD. 앱의 자동 적립·직접 쿠폰 사용이 앱 설치를 감수할 만한 이유가 되나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_app_worth" value="충분히 그렇다"><span>충분히 그렇다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_app_worth" value="혜택 더 크면 그렇다"><span>혜택이 더 크다면 그렇다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_app_worth" value="잘 모르겠다"><span>잘 모르겠다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_app_worth" value="굳이 아닌 것 같다"><span>웹으로도 비슷해서 굳이 아닌 것 같다</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="form-section-title">서비스 확장성</div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Q18. 단골UP을 주변 동료에게 추천할 의향이 얼마나 되나요?</label>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:6px" id="u_nps_wrap">
+          <!-- JS로 렌더링 -->
+        </div>
+        <div class="scale-labels"><span>전혀 추천 안 함 (0)</span><span>적극 추천 (5)</span></div>
+        <input type="hidden" id="u_nps_val" value="">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Q19. 단골UP을 다른 업종에서도 쓰고 싶다면 가장 큰 이유는 무엇인가요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_expand_why" value="쿠폰·할인 혜택"><span>쿠폰·할인 혜택을 받을 수 있어서</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_expand_why" value="포인트·스탬프 적립"><span>포인트·스탬프가 쌓여서 (장기 적립 혜택)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_expand_why" value="앱 주문 편의"><span>앱으로 편하게 주문할 수 있어서 (비대면·줄 안 서도 됨)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_expand_why" value="단골 인정 느낌"><span>자주 가는 매장을 단골로 인정받는 느낌이 좋아서</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_expand_why" value="해당없음"><span>다른 업종에서 쓰고 싶지 않다</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Q20. 단골UP이 있다면 더 자주 이용할 것 같은 업종은? <span style="font-size:12px;color:var(--muted)">(복수 선택)</span></label>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="식당"><span>🍱 식당</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="카페"><span>🧋 카페</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="베이커리·간식"><span>🥐 베이커리·간식</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="미용실·헤어샵"><span>💇 미용실·헤어샵</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="네일·뷰티"><span>💅 네일·뷰티</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="편의점·마트"><span>🏪 편의점·마트</span></label>
+          <label class="check-opt"><input type="checkbox" name="u_q_expand" value="헬스·피트니스"><span>🏋️ 헬스·피트니스</span></label>
+        </div>
+        <input type="text" style="margin-top:8px" id="u_q_expand_etc" placeholder="기타 (직접 입력)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Q21. 매장에서 QR을 스캔해 바로 주문할 수 있다면 사용할 것 같나요? <span style="font-size:12px;color:var(--muted)">(앱 설치 없이 웹에서 바로 주문)</span></label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_qr_web" value="적극 쓸 것 같다"><span>적극 쓸 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_qr_web" value="편리하면 쓸 것 같다"><span>편리하면 쓸 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_qr_web" value="잘 모르겠다"><span>잘 모르겠다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_qr_web" value="굳이 필요 없을 것 같다"><span>굳이 필요 없을 것 같다</span></label>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Q22. QR 주문 시 멤버십 적립을 위해 PAYCO 앱 설치가 필요하다면 설치할 의향이 있나요?</label>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="u_q_qr_app" value="설치할 것 같다"><span>설치할 것 같다 (적립 혜택이 충분하니까)</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_qr_app" value="혜택 크면 설치"><span>혜택이 더 크다면 설치할 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="u_q_qr_app" value="설치 안 할 것 같다"><span>설치 안 할 것 같다 (웹으로만 쓸 것 같다)</span></label>
+        </div>
       </div>
     </div>
     <div class="form-section-title">전반적 만족도</div>
     <div class="card">
       <div class="form-group">
-        <label class="form-label">Q12. 전반적인 서비스(주문+멤버십)에 대한 만족도는?</label>
+        <label class="form-label">Q23. 전반적인 서비스(주문+멤버십)에 대한 만족도는?</label>
         <div class="scale-group" id="u_q12"></div>
         <div class="scale-labels"><span>매우 불만족</span><span>매우 만족</span></div>
       </div>
       <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Q13. 개선이 필요하다고 느낀 점이나 추가 기능 제안</label>
+        <label class="form-label">Q24. 개선이 필요하다고 느낀 점이나 추가 기능 제안</label>
         <textarea id="u_q13" placeholder="자유롭게 입력해 주세요"></textarea>
       </div>
     </div>
@@ -749,9 +1016,10 @@
     <!-- 날짜 선택 -->
     <div id="adminDateBar" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;scrollbar-width:none;"></div>
     <!-- 탭 -->
-    <div style="display:flex;gap:4px;">
-      <button id="adminTab-result" onclick="switchAdminTab('result')" style="flex:1;padding:8px;border:none;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:var(--black);">테스트 결과</button>
-      <button id="adminTab-survey" onclick="switchAdminTab('survey')" style="flex:1;padding:8px;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);">사용자 후기</button>
+    <div style="display:flex;background:rgba(255,255,255,0.15);border-radius:12px;padding:3px;gap:2px;">
+      <button id="adminTab-result" onclick="switchAdminTab('result')" style="flex:1;padding:8px 4px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:var(--black);transition:all .2s;">테스트 결과</button>
+      <button id="adminTab-survey" onclick="switchAdminTab('survey')" style="flex:1;padding:8px 4px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:rgba(255,255,255,0.7);transition:all .2s;">사용자 후기</button>
+      <button id="adminTab-ai" onclick="switchAdminTab('ai')" style="flex:1;padding:8px 4px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:rgba(255,255,255,0.7);transition:all .2s;">AI 분석</button>
     </div>
   </div>
   <div style="padding:16px;" id="adminContent">
@@ -795,18 +1063,16 @@ function buildScenarios(store, hasCoupon) {
   // ── 결제 공통 ──
   scenarios.push({
     id:'P1', cat:'공통', name:'결제 — PAYCO',
+    cases:['pickup','pickup_dine'],
     pre:'PAYCO 앱 로그인 상태',
-    steps: hasOrder
-      ? ['앱에서 메뉴 선택 후 주문','결제 수단에서 PAYCO 선택 후 결제 진행','식권 자동 적용 여부 확인','결제 완료 화면 확인']
-      : ['포스에서 금액 입력','PAYCO로 결제 진행','식권 자동 적용 여부 확인','영수증 확인'],
+    steps:['앱에서 메뉴 선택 후 주문','결제 수단에서 PAYCO 선택 후 결제 진행','식권 자동 적용 여부 확인','결제 완료 화면 확인'],
     expected:'PAYCO 결제 정상 처리\n식권 자동 적용 확인',
   });
   scenarios.push({
     id:'P2', cat:'공통', name:'결제 — 신용/체크 카드',
+    cases:['pickup','pickup_dine'],
     pre:'신용/체크 카드 준비',
-    steps: hasOrder
-      ? ['앱에서 메뉴 선택 후 주문','결제 수단에서 신용/체크 카드 선택 후 결제 진행','결제 완료 화면 확인']
-      : ['포스에서 금액 입력','신용/체크 카드로 결제 진행','영수증 확인'],
+    steps:['앱에서 메뉴 선택 후 주문','결제 수단에서 신용/체크 카드 선택 후 결제 진행','결제 완료 화면 확인'],
     expected:'신용/체크 카드 결제 정상 처리\n주문 완료 확인',
   });
 
@@ -819,6 +1085,7 @@ function buildScenarios(store, hasCoupon) {
 
   scenarios.push({
     id:'D1', cat:'단골맺기', name:'PAYCO 앱으로 단골 맺기',
+    cases:['pickup','pickup_dine'],
     pre:'PAYCO 앱 로그인 상태',
     steps:[
       '단골UP 접속 (PAYCO 앱 → 전체 메뉴 → 라이프 → 단골UP)',
@@ -831,6 +1098,7 @@ function buildScenarios(store, hasCoupon) {
   });
   scenarios.push({
     id:'D2', cat:'단골맺기', name:'현장 멤버십 웹으로 단골 맺기',
+    cases:['dine'],
     pre:'모바일 브라우저 사용',
     steps:[
       '매장 비치 QR 스캔 또는 상단 바로가기 링크로 접속',
@@ -847,14 +1115,42 @@ function buildScenarios(store, hasCoupon) {
   if (hasPickup) {
     scenarios.push({
       id:'O1', cat:'주문', name:'픽업 주문',
+      cases:['pickup'],
       pre:'PAYCO 앱 로그인 상태',
       steps:['가맹점 상세 페이지에서 픽업 탭 선택','메뉴 선택 후 주문','픽업 주문 상세 내역 확인','PAYCO 알림 확인','준비 완료되면 매장에서 픽업'],
       expected:'픽업 주문 정상 접수\n픽업 완료 처리',
     });
+    scenarios.push({
+      id:'O2-1', cat:'주문', name:'앱 주문 후 현장 취식 (일괄 결제)',
+      cases:['pickup_dine'],
+      pre:'PAYCO 앱으로 픽업 주문하되 현장에서 취식하는 케이스\n한 명이 전체 금액을 일괄 결제',
+      steps:[
+        '매장 방문 후 점주 안내에 따라 앱으로 주문 진행',
+        '대표 1명이 전체 메뉴를 한 번에 주문 및 결제',
+        '1건으로 주문이 정상 접수됐는지 확인',
+        '점주와 추가 소통이 발생했는지 확인 (테이블 위치 안내, 주문 내용 재확인 등)',
+        '받은 메뉴가 주문 내용과 일치하는지 확인',
+      ],
+      expected:'1건 주문으로 정상 접수\n주문한 메뉴 정확히 제공\n점주-고객 추가 소통 최소화\n※ 추가 소통이 발생한 경우 메모에 상황 기록',
+    });
+    scenarios.push({
+      id:'O2-2', cat:'주문', name:'앱 주문 후 현장 취식 (더치페이)',
+      cases:['pickup_dine'],
+      pre:'PAYCO 앱으로 픽업 주문하되 현장에서 취식하는 케이스\n각자 개별 주문·결제 (더치페이)',
+      steps:[
+        '매장 방문 후 점주 안내에 따라 각자 앱으로 개별 주문 및 결제',
+        '인원 수만큼 개별 주문 건으로 접수됐는지 확인',
+        '점주가 동일 테이블 주문 여러 건을 구분할 수 있는지 확인',
+        '점주와 추가 소통이 발생했는지 확인 (테이블 구분, 주문 내용 재확인 등)',
+        '받은 메뉴가 각자 주문 내용과 일치하는지 확인',
+      ],
+      expected:'인원 수만큼 개별 주문 정상 접수\n주문한 메뉴 정확히 제공\n※ 동일 테이블 주문 묶음 처리 불가로 점주 추가 소통 발생 가능 → 메모에 상황 기록',
+    });
   }
   if (hasDelivery) {
     scenarios.push({
-      id:'O2', cat:'주문', name:'배달 주문',
+      id:'O3', cat:'주문', name:'배달 주문',
+      cases:['pickup','pickup_dine'],
       pre:'PAYCO 앱 로그인 상태\n배달 주소 설정 완료',
       steps:['앱에서 배달 선택','메뉴 선택 후 주문','배달 예상 시간 확인','배달 완료 확인'],
       expected:'배달 주문 정상 접수\n배달 완료 처리',
@@ -862,7 +1158,8 @@ function buildScenarios(store, hasCoupon) {
   }
   if (!hasOrder) {
     scenarios.push({
-      id:'O3', cat:'주문', name:'앱 주문 미사용 — 현장 취식 확인',
+      id:'O4', cat:'주문', name:'앱 주문 미사용 — 현장 취식 확인',
+      cases:['dine'],
       pre:'앱 주문 기능 비활성화 가맹점',
       steps:['앱에서 해당 가맹점 진입','주문 버튼 노출 여부 확인'],
       expected:'앱 주문 UI 미노출 또는 비활성화\n현장 취식만 가능함을 안내',
@@ -873,7 +1170,8 @@ function buildScenarios(store, hasCoupon) {
   if (hasMembership && hasOrder) {
     scenarios.push({
       id:'M1', cat:'멤버십', name:`앱 자동 적립 (${membership === 'stamp' ? '스탬프' : '포인트'})`,
-      pre:`${membership === 'stamp' ? '스탬프' : '포인트'}형 가맹점\n앱 주문 케이스\n(앱 주문 시 자동 적립 → M1, 현장 취식 시 포스 수기 적립 → M2)`,
+      cases:['pickup','pickup_dine'],
+      pre:`${membership === 'stamp' ? '스탬프' : '포인트'}형 가맹점\n앱 주문 케이스`,
       steps:[
         '앱에서 주문 진행',
         '결제하기 페이지에 적립 예상 ' + (membership === 'stamp' ? '스탬프' : '포인트') + ' 표시 여부 확인',
@@ -890,7 +1188,8 @@ function buildScenarios(store, hasCoupon) {
     const isStamp = membership === 'stamp';
     scenarios.push({
       id:'M2', cat:'멤버십', name:`포스 수기 적립 (${isStamp ? '스탬프' : '포인트'})`,
-      pre:`${isStamp ? '스탬프' : '포인트'}형 가맹점\n앱 주문이 아닌 현장 취식 케이스\n(앱 주문 시 자동 적립 → M1, 현장 취식 시 포스 수기 적립 → M2)`,
+      cases:['dine'],
+      pre:`${isStamp ? '스탬프' : '포인트'}형 가맹점\n매장 직접 주문 후 현장 취식 케이스`,
       steps:[
         '고객 취식 완료',
         '포스에서 단골UP 멤버십 적립 가능 여부 확인',
@@ -903,6 +1202,7 @@ function buildScenarios(store, hasCoupon) {
   if (membership === 'stamp') {
     scenarios.push({
       id:'M3', cat:'멤버십', name:'스탬프 완성 → 리워드 쿠폰 발급',
+      cases:['pickup','pickup_dine','dine'],
       pre:'스탬프판 완성 직전 사용자 (마지막 1개 남은 상태)',
       steps:['마지막 스탬프 적립 (앱 주문 or 수기)','앱 쿠폰함 확인','모바일 웹 쿠폰함 확인'],
       expected:'스탬프 완성 시 리워드 쿠폰 발급\n앱·모바일 웹 양쪽에서 확인 가능',
@@ -911,6 +1211,7 @@ function buildScenarios(store, hasCoupon) {
   if (!hasMembership) {
     scenarios.push({
       id:'M5', cat:'멤버십', name:'멤버십 미사용 — 적립 UI 미노출 확인',
+      cases:['pickup','pickup_dine','dine'],
       pre:'멤버십 미설정 가맹점',
       steps:['앱에서 해당 가맹점 진입','멤버십/적립 관련 UI 확인'],
       expected:'적립 관련 UI 미노출',
@@ -921,6 +1222,7 @@ function buildScenarios(store, hasCoupon) {
   if (coupon) {
     scenarios.push({
       id:'C1', cat:'쿠폰', name:'쿠폰 사용 — 앱',
+      cases:['pickup','pickup_dine'],
       pre:'쿠폰 보유 사용자\nPAYCO 앱 로그인 상태',
       steps:[
         '장바구니 또는 결제하기 페이지에서 쿠폰 사용 가능 시 쿠폰 사용 영역 노출 확인',
@@ -932,6 +1234,7 @@ function buildScenarios(store, hasCoupon) {
     });
     scenarios.push({
       id:'C2', cat:'쿠폰', name:'쿠폰 사용 — 모바일 웹',
+      cases:['dine'],
       pre:'현장 멤버십 웹 로그인 상태',
       steps:[
         '현장 멤버십 웹 로그인',
@@ -945,6 +1248,7 @@ function buildScenarios(store, hasCoupon) {
   } else {
     scenarios.push({
       id:'C3', cat:'쿠폰', name:'쿠폰 UI 미노출 확인',
+      cases:['pickup','pickup_dine','dine'],
       pre:'쿠폰 미발행 가맹점',
       steps:['앱에서 해당 가맹점 주문 화면 진입','모바일 웹에서도 확인'],
       expected:'쿠폰 관련 UI 미노출 (앱·모바일 웹 모두)',
@@ -955,6 +1259,7 @@ function buildScenarios(store, hasCoupon) {
   if (hasMembership) {
     scenarios.push({
       id:'H1', cat:'이용내역', name:'앱에서 주문 내역 확인',
+      cases:['pickup','pickup_dine'],
       pre:'앱으로 주문을 완료하여 주문 내역이 1개 이상 있는 상태',
       steps:[
         '단골UP 메인 → 사람 아이콘 클릭 → 주문 내역 접속',
@@ -976,6 +1281,7 @@ function buildScenarios(store, hasCoupon) {
     const webLinks = webUrl ? [{ stepIdx: 0, url: webUrl }] : [];
     scenarios.push({
       id:'H2', cat:'이용내역', name:'웹에서 이용 내역 확인',
+      cases:['dine'],
       pre: webUrl ? '포스 수기 적립 내역이 1개 이상 있는 상태\n현장 멤버십 웹 로그인 상태' : 'webUrl 미설정 — 담당자 확인 필요',
       steps: webStep,
       expected: webExpected,
@@ -1002,15 +1308,25 @@ function saveState(s) { localStorage.setItem('testState', JSON.stringify(s)); }
 // ── 매장 선택 화면 ──
 function initStoreSelect() {
   const saved = localStorage.getItem('selectedStore');
-  if (saved) {
+  const savedCase = localStorage.getItem('selectedCase');
+  if (saved && savedCase) {
     currentStore = JSON.parse(saved);
+    selectedCase = savedCase;
     enterApp();
     return;
   }
-  document.getElementById('storeBtnList').innerHTML = STORES.map(s => `
-    <button class="store-btn" onclick="selectStore('${s.id}')">
+  if (saved && !savedCase) {
+    currentStore = JSON.parse(saved);
+    showCaseSelect();
+    return;
+  }
+  const submitted = JSON.parse(localStorage.getItem('submittedStores') || '[]');
+  document.getElementById('storeBtnList').innerHTML = STORES.map(s => {
+    const isDone = submitted.includes(s.id);
+    return `
+    <button class="store-btn" onclick="${isDone ? '' : `selectStore('${s.id}')`}" ${isDone ? 'disabled' : ''} style="${isDone ? 'opacity:0.45;cursor:default;' : ''}">
       <div class="store-btn-content">
-        <div class="store-btn-name">${s.name}</div>
+        <div class="store-btn-name">${s.name}${isDone ? ' <span style="font-size:12px;color:#01a058;font-weight:600;">제출 완료 ✅</span>' : ''}</div>
         ${s.location ? `<div class="store-btn-location">📍 ${s.location}</div>` : ''}
         <div class="store-btn-meta">
           <span class="store-tag tag-type">${s.type}</span>
@@ -1023,34 +1339,141 @@ function initStoreSelect() {
            : '<span class="store-tag tag-order">주문 미사용</span>' }
         </div>
       </div>
-      <div class="store-btn-chevron">›</div>
-    </button>`).join('');
+      <div class="store-btn-chevron">${isDone ? '' : '›'}</div>
+    </button>`;
+  }).join('');
 }
+
+let selectedCase = null;
+
+const CASE_LABELS = {
+  pickup: '픽업',
+  pickup_dine: '픽업 후 현장 취식',
+  dine: '현장 직접 주문',
+};
+const CASE_ORDER_TYPE = {
+  pickup: '앱 주문(픽업)',
+  pickup_dine: '앱 주문(현장취식)',
+  dine: '현장 취식(수기 적립)',
+};
 
 function selectStore(id) {
   currentStore = STORES.find(s => s.id === id);
   localStorage.setItem('selectedStore', JSON.stringify(currentStore));
+  showCaseSelect();
+}
+
+function showCaseSelect() {
+  document.getElementById('page-store-select').style.display = 'none';
+  document.getElementById('page-case-select').style.display = 'block';
+  document.getElementById('caseStoreTitle').textContent = currentStore.name;
+}
+
+function showCaseBack() {
+  document.getElementById('page-case-select').style.display = 'none';
+  localStorage.removeItem('selectedStore');
+  localStorage.removeItem('selectedCase');
+  currentStore = null;
+  selectedCase = null;
+  showEntryPage('store-select');
+}
+
+function toggleDineWhen(val) {
+  document.getElementById('u_dine_before_wrap').style.display = val === 'before' ? 'block' : 'none';
+  document.getElementById('u_dine_how_wrap').style.display = val === 'after' ? 'block' : 'none';
+}
+
+
+function toggleQ8WebCheck(show) {
+  document.getElementById('u_q8_web_detail_wrap').style.display = show ? 'block' : 'none';
+}
+
+function updateSurveyForCase(caseId) {
+  const show = (id) => { const el = document.getElementById(id); if (el) el.style.display = ''; };
+  const hide = (id) => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+
+  // 초기화
+  show('survey-q2-wrap');
+  show('survey-app-title'); show('survey-app-card');
+  show('survey-pos-title'); show('survey-pos-card');
+  hide('survey-dine-title'); hide('survey-dine-card');
+  show('survey-q15-wrap'); show('survey-q16-wrap');
+  hide('survey-dine-app-why'); hide('survey-dine-app-when');
+
+  const q15 = document.getElementById('survey-q15-label');
+
+  if (caseId === 'pickup') {
+    hide('survey-q2-wrap');
+    hide('survey-pos-title'); hide('survey-pos-card');
+    hide('survey-q16-wrap');
+    if (q15) q15.textContent = 'Q15. 미리 주문하고 도착 시간에 맞춰 픽업할 수 있다면 유용할 것 같나요?';
+  }
+
+  if (caseId === 'pickup_dine') {
+    hide('survey-q2-wrap');
+    hide('survey-pos-title'); hide('survey-pos-card');
+    show('survey-dine-title'); show('survey-dine-card');
+    hide('survey-q16-wrap');
+    if (q15) q15.textContent = 'Q15. 미리 주문하고 도착 시간에 맞춰 바로 현장 취식을 할 수 있다면 유용할 것 같나요?';
+  }
+
+  if (caseId === 'dine') {
+    hide('survey-q2-wrap');
+    hide('survey-app-title'); hide('survey-app-card');
+    hide('survey-q15-wrap');
+    hide('survey-q16-wrap');
+    show('survey-dine-app-why'); show('survey-dine-app-when');
+  }
+}
+
+function backToCase() {
+  // 케이스 선택으로 돌아가기 (데이터 유지, 케이스만 재선택)
+  localStorage.removeItem('selectedCase');
+  selectedCase = null;
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('page-case-select').style.display = 'block';
+  document.getElementById('caseStoreTitle').textContent = currentStore.name;
+}
+
+function selectCase(caseId) {
+  selectedCase = caseId;
+  localStorage.setItem('selectedCase', caseId);
   enterApp();
 }
 
 function enterApp() {
-  currentScenarios = buildScenarios(currentStore, true);
+  const allScenarios = buildScenarios(currentStore, true);
+  currentScenarios = allScenarios.filter(s => !s.cases || s.cases.includes(selectedCase));
+  document.getElementById('page-case-select').style.display = 'none';
   document.getElementById('page-store-select').style.display = 'none';
   document.getElementById('mainApp').classList.remove('hidden');
+  const caseLabel = CASE_LABELS[selectedCase] || '';
   document.getElementById('storeBar').innerHTML =
-    `<span> ${currentStore.name}</span><button class="store-change-btn" onclick="changeStore()">변경</button>`;
+    `<button onclick="backToCase()" style="background:none;border:none;color:rgba(255,255,255,0.85);font-size:24px;font-weight:300;cursor:pointer;padding:0 8px 0 0;line-height:1;flex-shrink:0;">&#8249;</button>
+    <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;">
+      <span style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${currentStore.name}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,0.6);">${caseLabel}</span>
+    </div>`;
+  // Q2 자동 입력
+  const orderType = CASE_ORDER_TYPE[selectedCase];
+  document.querySelectorAll('input[name="u_order_type"]').forEach(el => {
+    el.checked = el.value === orderType;
+  });
   document.getElementById('u_store').value = currentStore.name;
   const webLink = document.getElementById('storeWebLink');
   if (currentStore.webUrl) { webLink.href = currentStore.webUrl; webLink.style.display = 'flex'; }
   else { webLink.style.display = 'none'; }
   document.getElementById('backBtn').classList.add('hidden');
+  updateSurveyForCase(selectedCase);
   initScenarios();
 }
 
 function changeStore() {
   if (!confirm('매장을 변경하면 현재 기기의 테스트 결과가 초기화됩니다. 계속할까요?')) return;
   localStorage.removeItem('selectedStore');
+  localStorage.removeItem('selectedCase');
   localStorage.removeItem('testState');
+  selectedCase = null;
   location.reload();
 }
 
@@ -1230,12 +1653,30 @@ function showPage(name) {
 
 // ── 5점 척도 ──
 function renderScales() {
-  ['u_q3','u_q4','u_q6','u_q7','u_q9_intuitive','u_q9_easy','u_q11','u_q12','o_q3','o_q7','o_q8','o_q9','o_q10'].forEach(id => {
+  ['u_q3','u_q9_intuitive','u_q9_easy','u_q11','u_q_coupon_appeal','u_q12','u_q_revisit','u_q_offpeak','u_q_prebook','u_dine_natural','u_dine_reuse','o_q3','o_q7','o_q8','o_q9','o_q10'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = [1,2,3,4,5].map(n =>
       `<button class="scale-btn" data-id="${id}" data-val="${n}" onclick="selectScale('${id}',${n})">${n}</button>`
     ).join('');
+  });
+}
+function renderNPS() {
+  const wrap = document.getElementById('u_nps_wrap');
+  if (!wrap) return;
+  wrap.innerHTML = [0,1,2,3,4,5].map(n => {
+    const color = n <= 2 ? '#e53935' : n <= 3 ? '#fb8c00' : '#43a047';
+    return `<button onclick="selectNPS(${n})" id="nps_btn_${n}" style="flex:1;height:48px;border-radius:8px;border:2px solid ${color};background:#fff;color:${color};font-weight:700;font-size:16px;cursor:pointer;transition:all .15s">${n}</button>`;
+  }).join('');
+}
+function selectNPS(val) {
+  document.getElementById('u_nps_val').value = val;
+  [0,1,2,3,4,5].forEach(n => {
+    const btn = document.getElementById(`nps_btn_${n}`);
+    if (!btn) return;
+    const color = n <= 2 ? '#e53935' : n <= 3 ? '#fb8c00' : '#43a047';
+    btn.style.background = n === val ? color : '#fff';
+    btn.style.color = n === val ? '#fff' : color;
   });
 }
 function selectScale(id, val) {
@@ -1260,9 +1701,11 @@ function submitUserSurvey() {
     type:'user', ts: new Date().toLocaleString('ko-KR'),
     store: currentStore.name,
     order_type: getRadio('u_order_type'),
-    q3:getScale('u_q3'), q4:getScale('u_q4'),
-    q5: getChecks('u_q5') + (document.getElementById('u_q5_etc').value ? ' / '+document.getElementById('u_q5_etc').value : ''),
-    q6:getScale('u_q6'), q7:getScale('u_q7'),
+    q3:getScale('u_q3'),
+    barrier: getRadio('u_q_barrier'),
+    web_enough: getRadio('u_q_web_enough'),
+    intro: getRadio('u_q_intro'),
+    app_worth: getRadio('u_q_app_worth'),
     q8_tried: getRadio('u_q8_tried'),
     q8_reason: getChecks('u_q8_reason') + (document.getElementById('u_q8_reason_etc').value ? ' / '+document.getElementById('u_q8_reason_etc').value : ''),
     q8_noti: getRadio('u_q8_noti'),
@@ -1275,6 +1718,30 @@ function submitUserSurvey() {
     q9_easy: getScale('u_q9_easy'),
     q10:getRadio('u_q10'), q11:getScale('u_q11'),
     q12:getScale('u_q12'), q13:document.getElementById('u_q13').value,
+    dine_app_why: [...document.querySelectorAll('input[name="u_dine_app_why"]:checked')].map(el=>el.value),
+    dine_app_why_etc: document.getElementById('u_dine_app_why_etc')?.value || '',
+    dine_app_when: [...document.querySelectorAll('input[name="u_dine_app_when"]:checked')].map(el=>el.value),
+    dine_app_when_etc: document.getElementById('u_dine_app_when_etc')?.value || '',
+    q8_amount: getRadio('u_q8_amount'), q8_stamp: getRadio('u_q8_stamp'),
+    dine_when: getRadio('u_dine_when'), dine_notify: getRadio('u_dine_notify'), dine_how: getRadio('u_dine_how'),
+    dine_comm_count: getRadio('u_dine_comm_count'),
+    dine_natural: getScale('u_dine_natural'), dine_reuse: getScale('u_dine_reuse'),
+    dine_pain: document.getElementById('u_dine_pain')?.value || '',
+    dine_sikwon: getRadio('u_dine_sikwon'),
+    coupon_appeal: getScale('u_q_coupon_appeal'),
+    coupon_revisit: getRadio('u_q_coupon_revisit'),
+    coupon_reissue: getRadio('u_q_coupon_reissue'),
+    revisit: getScale('u_q_revisit'),
+    offpeak: getScale('u_q_offpeak'),
+    prebook: getScale('u_q_prebook'),
+    entry: getRadio('u_q_entry'),
+    channel: getRadio('u_q_channel'),
+    nps: document.getElementById('u_nps_val')?.value ?? '',
+    expand_why: getRadio('u_q_expand_why'),
+    expand: [...document.querySelectorAll('input[name="u_q_expand"]:checked')].map(el=>el.value),
+    expand_etc: document.getElementById('u_q_expand_etc')?.value || '',
+    qr_web: getRadio('u_q_qr_web'),
+    qr_app: getRadio('u_q_qr_app'),
   };
   const surveys = JSON.parse(localStorage.getItem('surveys')||'[]');
   surveys.push(data);
@@ -1318,9 +1785,9 @@ function exportCSV() {
     csv += `"${s.id}","${s.cat}","${s.name}","${currentStore.name}","${r.result||'미입력'}","${(r.note||'').replace(/"/g,'""')}","${r.ts?new Date(r.ts).toLocaleString('ko-KR'):''}"\n`;
   });
   csv += '\n## 사용자 후기\n';
-  csv += '시각,가맹점,주문방식,Q3,Q4,Q5,Q6,Q7,Q8수기적립시도,Q8미시도이유,Q8점주알림,Q8웹내역확인,Q9현장웹사용,Q9직관성,Q9편리성,Q10,Q11,Q12,Q13\n';
+  csv += '시각,가맹점,주문방식,Q3앱주문직관성,QA앱설치장벽,QB웹완결성,QC소개방식,QD앱설치감수,Q8수기적립시도,Q8미시도이유,Q8점주알림,Q8웹내역확인,Q9현장웹사용,Q9직관성,Q9편리성,Q10,Q11,Q12,Q13\n';
   surveys.filter(s=>s.type==='user').forEach(s => {
-    csv += [s.ts,s.store,s.order_type,s.q3,s.q4,s.q5,s.q6,s.q7,s.q8_tried,s.q8_reason,s.q8_noti,s.q8_web_check,s.q9_used,s.q9_intuitive,s.q9_easy,s.q10,s.q11,s.q12,s.q13]
+    csv += [s.ts,s.store,s.order_type,s.q3,s.barrier,s.web_enough,s.intro,s.app_worth,s.q8_tried,s.q8_reason,s.q8_noti,s.q8_web_check,s.q9_used,s.q9_intuitive,s.q9_easy,s.q10,s.q11,s.q12,s.q13]
       .map(v=>`"${(v||'').replace(/"/g,'""')}"`) .join(',') + '\n';
   });
   const blob = new Blob([csv], {type:'text/csv'});
@@ -1348,6 +1815,9 @@ function showToast(msg) {
 }
 
 // 포스 수기 적립 toggle
+function toggleCouponDetail(show) {
+  document.getElementById('coupon-detail-wrap').style.display = show ? 'block' : 'none';
+}
 function toggleQ8(tried) {
   document.getElementById('u_q8_no_wrap').style.display = tried ? 'none' : 'block';
   document.getElementById('u_q8_yes_wrap').style.display = tried ? 'block' : 'none';
@@ -1405,8 +1875,15 @@ function submitResultToFirebase() {
     .then(() => {
       showToast('결과가 제출됐어요! ✅');
       btn.textContent = '제출 완료 ✅';
+      // 제출 완료 매장 localStorage에 기록
+      const submitted = JSON.parse(localStorage.getItem('submittedStores') || '[]');
+      if (!submitted.includes(currentStore.id)) {
+        submitted.push(currentStore.id);
+        localStorage.setItem('submittedStores', JSON.stringify(submitted));
+      }
       setTimeout(() => {
         document.getElementById('mainApp').classList.add('hidden');
+        localStorage.removeItem('selectedStore');
         showEntryPage('entry');
       }, 1200);
     })
@@ -1419,7 +1896,7 @@ function submitResultToFirebase() {
 
 // ── 어드민 뷰 ──
 function initAdmin() {
-  ['page-entry','page-signup','page-store-select','mainApp'].forEach(id => {
+  ['page-entry','page-signup','page-store-select','page-case-select','mainApp'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1433,12 +1910,13 @@ let currentAdminDate = '__all__';
 
 function switchAdminTab(tab) {
   currentAdminTab = tab;
-  ['result','survey'].forEach(t => {
+  ['result','survey','ai'].forEach(t => {
     const btn = document.getElementById(`adminTab-${t}`);
+    if (!btn) return;
     if (t === tab) {
       btn.style.background = '#fff'; btn.style.color = 'var(--black)'; btn.style.fontWeight = '700';
     } else {
-      btn.style.background = 'rgba(255,255,255,0.15)'; btn.style.color = 'rgba(255,255,255,0.7)'; btn.style.fontWeight = '600';
+      btn.style.background = 'transparent'; btn.style.color = 'rgba(255,255,255,0.7)'; btn.style.fontWeight = '600';
     }
   });
   adminRefresh();
@@ -1495,6 +1973,7 @@ function adminRefresh() {
     Object.values(filteredData).forEach(subs => {
       Object.values(subs).forEach(d => allSubmissions.push(d));
     });
+    _adminAllSubmissions = allSubmissions;
 
     if (!allSubmissions.length) {
       el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 결과가 없어요</div>';
@@ -1503,8 +1982,10 @@ function adminRefresh() {
 
     if (currentAdminTab === 'result') {
       renderAdminResult(el, filteredData);
-    } else {
+    } else if (currentAdminTab === 'survey') {
       renderAdminSurvey(el, allSubmissions);
+    } else if (currentAdminTab === 'ai') {
+      renderAdminAI(el, filteredData, allSubmissions);
     }
   });
 }
@@ -1518,50 +1999,155 @@ function toggleFreeText(btn) {
 }
 
 let currentResultStore = '__all__';
+let _adminResultData = {};
+let _adminAllSubmissions = [];
 
 function filterResultStore(storeKey) {
   currentResultStore = storeKey;
-  // 칩 스타일 갱신
-  document.querySelectorAll('.result-store-chip').forEach(btn => {
-    const active = btn.dataset.store === storeKey;
-    btn.style.background = active ? 'var(--nhn-blue)' : '#fff';
-    btn.style.color = active ? '#fff' : 'var(--ink-2)';
-    btn.style.borderColor = active ? 'var(--nhn-blue)' : 'var(--line-soft)';
-  });
-  // 가게별 섹션 show/hide
-  document.querySelectorAll('.result-store-section').forEach(sec => {
-    sec.style.display = (storeKey === '__all__' || sec.dataset.store === storeKey) ? 'block' : 'none';
-  });
+  const sel = document.getElementById('resultStoreSelect');
+  if (sel) sel.value = storeKey;
+  renderAdminResult(document.getElementById('adminContent'), _adminResultData);
+}
+
+function toggleUserDetail(btn) {
+  const body = btn.closest('.user-result-card').querySelector('.user-detail');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '접기 ▲' : '펼치기 ▼';
+}
+
+function buildUserCard(d, idx, expanded) {
+  const scenarios = d.scenarios || {};
+  const pass = Object.values(scenarios).filter(s => s.result === 'pass').length;
+  const fail = Object.values(scenarios).filter(s => s.result === 'fail').length;
+  const skip = Object.values(scenarios).filter(s => s.result === 'na').length;
+  const notDone = Object.values(scenarios).filter(s => !s.result || s.result === '미입력').length;
+  const timeStr = d.ts ? d.ts.replace(/^\S+\s/, '') : '';
+  const team = d.survey?.team || '';
+  const done = pass + fail;
+  const all = pass + fail + skip + notDone;
+  const rate = done > 0 ? Math.round(pass / done * 100) : 0;
+  const rColor = rate >= 80 ? '#01a058' : rate >= 50 ? '#f59e0b' : '#dc2626';
+  const caseLabel = d.selectedCase ? ({pickup:'픽업', pickup_dine:'픽업+현장취식', dine:'현장직접주문'}[d.selectedCase] || d.selectedCase) : '';
+
+  // 설문 응답 요약
+  const sv = d.survey;
+  const surveyHtml = sv ? (() => {
+    const row = (label, val) => val ? `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f3f4;font-size:12px;">
+      <span style="color:var(--ink-4);flex-shrink:0;min-width:110px;">${label}</span>
+      <span style="color:var(--ink-1);font-weight:500;flex:1;">${val}</span>
+    </div>` : '';
+    const scaleVal = v => v ? '★'.repeat(Number(v)) + '☆'.repeat(5 - Number(v)) + ` (${v}점)` : '';
+    const npsColor = Number(sv.nps) >= 4 ? '#01a058' : Number(sv.nps) <= 2 ? '#dc2626' : '#f59e0b';
+    return `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;">
+      <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:8px;letter-spacing:0.05em;">📋 사용자 후기</div>
+      ${sv.nps !== '' && sv.nps !== undefined ? `<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f3f4;font-size:12px;">
+        <span style="color:var(--ink-4);flex-shrink:0;min-width:110px;">추천 의향 (NPS)</span>
+        <span style="font-weight:700;color:${npsColor};">${sv.nps}점 / 5</span>
+      </div>` : ''}
+      ${row('앱 주문 직관성', scaleVal(sv.q3))}
+      ${row('쿠폰 사용', sv.q10)}
+      ${sv.coupon_appeal ? row('쿠폰 매력도', scaleVal(sv.coupon_appeal)) : ''}
+      ${row('쿠폰 재방문 동인', sv.coupon_revisit)}
+      ${row('재발급 구조 인지', sv.coupon_reissue)}
+      ${row('멤버십 재방문 영향', scaleVal(sv.revisit))}
+      ${row('앱/웹 기능차이 인지', sv.channel)}
+      ${row('앱 설치 장벽 예상', sv.barrier)}
+      ${row('웹 완결성', sv.web_enough)}
+      ${row('동료 소개 방식', sv.intro)}
+      ${row('QR 웹 주문 의향', sv.qr_web)}
+      ${row('확장 희망 이유', sv.expand_why)}
+      ${Array.isArray(sv.expand) && sv.expand.length ? row('확장 희망 업종', sv.expand.join(', ')) : ''}
+      ${row('전반적 만족도', scaleVal(sv.q12))}
+      ${sv.q13 ? `<div style="padding:6px 0;font-size:12px;">
+        <div style="color:var(--ink-4);margin-bottom:3px;">자유 의견</div>
+        <div style="color:var(--ink-1);line-height:1.6;background:#f8f9fa;padding:8px 10px;border-radius:8px;">${sv.q13}</div>
+      </div>` : ''}
+    </div>`;
+  })() : '<div style="margin-top:8px;font-size:11px;color:var(--ink-4);">후기 미제출</div>';
+
+  const detailHtml = `
+    <div class="user-detail" style="display:${expanded ? 'block' : 'none'};margin-top:12px;border-top:1px solid #e5e7eb;padding-top:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:8px;letter-spacing:0.05em;">🧪 시나리오 결과</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${Object.values(scenarios).some(s => s.note && s.result !== 'na') ? '8px' : '0'};">
+        ${Object.entries(scenarios).map(([id, s]) => {
+          const color = s.result === 'pass' ? '#01a058' : s.result === 'fail' ? '#dc2626' : '#aaa';
+          const bg = s.result === 'pass' ? 'rgba(1,160,88,0.08)' : s.result === 'fail' ? 'rgba(220,38,38,0.08)' : 'rgba(0,0,0,0.05)';
+          return `<span style="font-size:11px;padding:3px 9px;border-radius:10px;background:${bg};color:${color};font-weight:600;">${id}${s.note && s.result !== 'na' ? ' 📝' : ''}</span>`;
+        }).join('')}
+      </div>
+      ${Object.entries(scenarios).filter(([,s]) => s.note && s.result !== 'na').map(([id, s]) => {
+        const color = s.result === 'fail' ? '#dc2626' : 'var(--ink-3)';
+        return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;background:#fff;border-radius:8px;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:700;color:${color};flex-shrink:0;margin-top:1px;">${id}</span>
+          <span style="font-size:12px;color:var(--ink-2);line-height:1.5;">${s.note}</span>
+        </div>`;
+      }).join('')}
+      ${surveyHtml}
+    </div>`;
+
+  return `
+  <div class="user-result-card" style="background:#f8f9fa;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:700;color:var(--ink-2);">${team || `사용자 ${idx + 1}`}</span>
+          ${caseLabel ? `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#e8f0fe;color:#1a73e8;font-weight:600;">${caseLabel}</span>` : ''}
+          ${d.survey ? `<span style="font-size:10px;padding:2px 7px;border-radius:8px;background:#e6f4ea;color:#01a058;font-weight:600;">후기✓</span>` : ''}
+        </div>
+        <div style="background:#e5e7eb;border-radius:4px;height:5px;overflow:hidden;display:flex;margin-bottom:6px;">
+          <div style="background:#01a058;height:100%;width:${all > 0 ? Math.round(pass/all*100) : 0}%;"></div>
+          <div style="background:#dc2626;height:100%;width:${all > 0 ? Math.round(fail/all*100) : 0}%;"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;">
+          <span style="color:#01a058;font-weight:600;">Pass ${pass}/${done}</span>
+          <span style="color:#dc2626;font-weight:600;">Fail ${fail}</span>
+          ${skip ? `<span style="color:var(--ink-4);">제외 ${skip}</span>` : ''}
+          ${notDone ? `<span style="color:#f59e0b;">미입력 ${notDone}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:12px;flex-shrink:0;">
+        <span style="font-size:20px;font-weight:700;color:${rColor};">${rate}%</span>
+        <span style="font-size:10px;color:var(--ink-4);">${timeStr}</span>
+        <button onclick="toggleUserDetail(this)" style="font-size:11px;color:var(--nhn-blue);background:none;border:1px solid var(--nhn-blue);border-radius:8px;padding:3px 8px;cursor:pointer;">${expanded ? '접기 ▲' : '펼치기 ▼'}</button>
+      </div>
+    </div>
+    ${detailHtml}
+  </div>`;
 }
 
 function renderAdminResult(el, data) {
+  _adminResultData = data;
   const stores = Object.entries(data).map(([k, subs]) => ({
     key: k,
     name: Object.values(subs)[0]?.store || k,
-  }));
+  })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-  // 필터 칩
-  const chips = [{ key: '__all__', name: '전체' }, ...stores].map(s => {
-    const active = s.key === currentResultStore;
-    return `<button class="result-store-chip" data-store="${s.key}" onclick="filterResultStore('${s.key}')" style="
-      flex-shrink:0;padding:5px 14px;border:1px solid ${active ? 'var(--nhn-blue)' : 'var(--line-soft)'};
-      border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
-      background:${active ? 'var(--nhn-blue)' : '#fff'};color:${active ? '#fff' : 'var(--ink-2)'};
-    ">${s.name}</button>`;
-  }).join('');
+  const isAll = currentResultStore === '__all__';
 
-  let html = `<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:12px;margin-bottom:4px;scrollbar-width:none;">${chips}</div>`;
+  // 매장 선택 드롭다운
+  const selectHtml = `
+  <div style="margin-bottom:16px;">
+    <select id="resultStoreSelect" onchange="filterResultStore(this.value)"
+      style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:10px;font-size:14px;font-weight:600;color:var(--ink-1);background:#fff;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23666%22 stroke-width=%221.5%22 fill=%22none%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;">
+      <option value="__all__">전체 매장</option>
+      ${stores.map(s => `<option value="${s.key}" ${currentResultStore === s.key ? 'selected' : ''}>${s.name}</option>`).join('')}
+    </select>
+  </div>`;
+
+  let html = selectHtml;
 
   Object.entries(data).sort(([, a], [, b]) => {
     const nameA = Object.values(a)[0]?.store || '';
     const nameB = Object.values(b)[0]?.store || '';
     return nameA.localeCompare(nameB, 'ko');
   }).forEach(([storeKey, submissions]) => {
+    if (!isAll && currentResultStore !== storeKey) return;
+
     const submissionList = Object.values(submissions);
     const storeName = submissionList[0]?.store || storeKey;
-    const show = currentResultStore === '__all__' || currentResultStore === storeKey;
 
-    // 전체 합산
     let totalPass = 0, totalFail = 0, totalSkip = 0, totalNotDone = 0;
     submissionList.forEach(d => {
       const sc = Object.values(d.scenarios || {});
@@ -1571,30 +2157,30 @@ function renderAdminResult(el, data) {
       totalNotDone += sc.filter(s => !s.result || s.result === '미입력').length;
     });
 
-    html += `<div class="result-store-section" data-store="${storeKey}" style="display:${show ? 'block' : 'none'};margin-bottom:24px;">`;
-
-    // 가게 헤더 카드
     const totalDone = totalPass + totalFail;
     const totalAll = totalPass + totalFail + totalSkip + totalNotDone;
     const passRate = totalDone > 0 ? Math.round(totalPass / totalDone * 100) : 0;
     const rateColor = passRate >= 80 ? '#01a058' : passRate >= 50 ? '#f59e0b' : '#dc2626';
 
+    html += `<div style="margin-bottom:24px;">`;
+
+    // 매장 헤더 카드
     html += `
     <div style="background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${storeName}</div>
         <div style="font-size:12px;color:var(--ink-4);">제출 ${submissionList.length}명</div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-        <div style="font-size:24px;font-weight:700;color:${rateColor};min-width:52px;">${passRate}%</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:26px;font-weight:700;color:${rateColor};min-width:52px;">${passRate}%</div>
         <div style="flex:1;">
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-4);margin-bottom:4px;">
             <span>테스트 ${totalDone}건 중 ${totalPass}건 통과</span>
             <span>${totalSkip ? `제외 ${totalSkip}` : ''}${totalSkip && totalNotDone ? ' · ' : ''}${totalNotDone ? `<span style="color:#f59e0b;">미입력 ${totalNotDone}</span>` : ''}</span>
           </div>
-          <div style="background:#f1f3f4;border-radius:6px;height:10px;overflow:hidden;display:flex;">
-            <div style="background:#01a058;height:100%;width:${totalAll > 0 ? Math.round(totalPass/totalAll*100) : 0}%;transition:width 0.3s;"></div>
-            <div style="background:#dc2626;height:100%;width:${totalAll > 0 ? Math.round(totalFail/totalAll*100) : 0}%;transition:width 0.3s;"></div>
+          <div style="background:#f1f3f4;border-radius:6px;height:8px;overflow:hidden;display:flex;">
+            <div style="background:#01a058;height:100%;width:${totalAll > 0 ? Math.round(totalPass/totalAll*100) : 0}%;"></div>
+            <div style="background:#dc2626;height:100%;width:${totalAll > 0 ? Math.round(totalFail/totalAll*100) : 0}%;"></div>
             <div style="background:#e5e7eb;height:100%;width:${totalAll > 0 ? Math.round(totalSkip/totalAll*100) : 0}%;"></div>
           </div>
           <div style="display:flex;gap:10px;margin-top:5px;font-size:11px;">
@@ -1605,59 +2191,225 @@ function renderAdminResult(el, data) {
       </div>
     </div>`;
 
-    // 개별 제출
+    // 개별 사용자 — 전체 모드: 기본 접힘 / 매장 선택 모드: 기본 펼침
     submissionList.forEach((d, idx) => {
-      const scenarios = d.scenarios || {};
-      const pass = Object.values(scenarios).filter(s => s.result === 'pass').length;
-      const fail = Object.values(scenarios).filter(s => s.result === 'fail').length;
-      const skip = Object.values(scenarios).filter(s => s.result === 'na').length;
-      const notDone = Object.values(scenarios).filter(s => !s.result || s.result === '미입력').length;
-      const timeStr = d.ts ? d.ts.split(' ').slice(-1)[0] : '';
-
-      const done = pass + fail;
-      const all = pass + fail + skip + notDone;
-      const rate = done > 0 ? Math.round(pass / done * 100) : 0;
-      const rColor = rate >= 80 ? '#01a058' : rate >= 50 ? '#f59e0b' : '#dc2626';
-
-      html += `
-      <div style="background:#f8f9fa;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:8px;margin-left:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:700;color:var(--ink-2);">사용자 ${idx + 1}</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:15px;font-weight:700;color:${rColor};">${rate}%</span>
-            <span style="font-size:11px;color:var(--ink-4);">${timeStr}</span>
-          </div>
-        </div>
-        <div style="background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;display:flex;margin-bottom:8px;">
-          <div style="background:#01a058;height:100%;width:${all > 0 ? Math.round(pass/all*100) : 0}%;"></div>
-          <div style="background:#dc2626;height:100%;width:${all > 0 ? Math.round(fail/all*100) : 0}%;"></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-          <span style="color:#01a058;font-size:11px;font-weight:600;">Pass ${pass}/${done}</span>
-          <span style="color:#dc2626;font-size:11px;font-weight:600;">Fail ${fail}</span>
-          ${skip ? `<span style="color:var(--ink-4);font-size:11px;">해당없음 ${skip}</span>` : ''}
-          ${notDone ? `<span style="color:#f59e0b;font-size:11px;">미입력 ${notDone}</span>` : ''}
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:${Object.values(scenarios).some(s => s.note && s.result !== 'na') ? '8px' : '0'};">
-          ${Object.entries(scenarios).map(([id, s]) => {
-            const color = s.result === 'pass' ? '#01a058' : s.result === 'fail' ? '#dc2626' : '#aaa';
-            const bg = s.result === 'pass' ? 'rgba(1,160,88,0.08)' : s.result === 'fail' ? 'rgba(220,38,38,0.08)' : 'rgba(0,0,0,0.05)';
-            return `<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${bg};color:${color};font-weight:600;">${id}${s.note && s.result !== 'na' ? ' 📝' : ''}</span>`;
-          }).join('')}
-        </div>
-        ${Object.entries(scenarios).filter(([,s]) => s.note && s.result !== 'na').map(([id, s]) => {
-          const color = s.result === 'fail' ? '#dc2626' : 'var(--ink-3)';
-          return `<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;background:#fff;border-radius:8px;margin-bottom:4px;">
-            <span style="font-size:11px;font-weight:700;color:${color};flex-shrink:0;margin-top:1px;">${id}</span>
-            <span style="font-size:12px;color:var(--ink-2);line-height:1.5;">${s.note}</span>
-          </div>`;
-        }).join('')}
-        ${d.survey ? '' : '<div style="margin-top:6px;font-size:11px;color:var(--ink-4);">후기 미제출</div>'}
-      </div>`;
+      html += buildUserCard(d, idx, !isAll);
     });
-    html += '</div>';
+
+    html += `</div>`;
   });
+
   el.innerHTML = html;
+}
+
+// ── AI 분석 ──
+function renderAdminAI(el, resultData, allSubmissions) {
+  const apiKey = localStorage.getItem('claudeApiKey') || '';
+
+  el.innerHTML = `
+  <div style="max-width:640px;margin:0 auto;">
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:16px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:8px;">🔑 Anthropic API Key</div>
+      <div style="display:flex;gap:8px;">
+        <input id="aiApiKeyInput" type="password" value="${apiKey}" placeholder="sk-ant-..." style="flex:1;padding:9px 12px;border:1px solid var(--line-soft);border-radius:8px;font-size:13px;">
+        <button onclick="saveApiKey()" style="padding:9px 14px;background:var(--nhn-blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">저장</button>
+      </div>
+      <div style="font-size:11px;color:var(--ink-4);margin-top:6px;">키는 이 기기 브라우저에만 저장돼요</div>
+    </div>
+    <button onclick="runAIAnalysis()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;">✨ AI 분석 시작</button>
+    <div id="aiResult"></div>
+  </div>`;
+}
+
+function saveApiKey() {
+  const key = document.getElementById('aiApiKeyInput').value.trim();
+  if (key) { localStorage.setItem('claudeApiKey', key); showToast('API 키 저장됨'); }
+}
+
+function buildAnalysisPrompt(resultData, allSubmissions) {
+  const withSurvey = allSubmissions.filter(d => d.survey);
+  const n = withSurvey.length;
+
+  // 시나리오 통과율 집계
+  const scenarioStats = {};
+  allSubmissions.forEach(d => {
+    Object.entries(d.scenarios || {}).forEach(([id, s]) => {
+      if (!scenarioStats[id]) scenarioStats[id] = { pass:0, fail:0, na:0 };
+      if (s.result === 'pass') scenarioStats[id].pass++;
+      else if (s.result === 'fail') scenarioStats[id].fail++;
+      else if (s.result === 'na') scenarioStats[id].na++;
+    });
+  });
+  const scenarioSummary = Object.entries(scenarioStats).map(([id, s]) => {
+    const done = s.pass + s.fail;
+    const rate = done > 0 ? Math.round(s.pass/done*100) : null;
+    return `${id}: ${rate !== null ? rate+'% 통과' : '미입력'} (Pass ${s.pass} / Fail ${s.fail}${s.na ? ` / 제외 ${s.na}` : ''})`;
+  }).join('\n');
+
+  // 설문 집계
+  const avg = key => {
+    const vals = withSurvey.map(d => Number(d.survey[key])).filter(v => !isNaN(v) && v > 0);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) + ` (n=${vals.length})` : '응답없음';
+  };
+  const dist = (key) => {
+    const counts = {};
+    withSurvey.forEach(d => {
+      const v = d.survey[key];
+      if (v) counts[v] = (counts[v]||0) + 1;
+    });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([v,c])=>`${v}: ${c}명`).join(' / ') || '응답없음';
+  };
+  const multiDist = (key) => {
+    const counts = {};
+    withSurvey.forEach(d => {
+      const v = d.survey[key];
+      const arr = Array.isArray(v) ? v : (v ? [v] : []);
+      arr.forEach(item => { counts[item] = (counts[item]||0)+1; });
+    });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([v,c])=>`${v}: ${c}명`).join(' / ') || '응답없음';
+  };
+  const notes = withSurvey.map(d => d.survey.q13).filter(Boolean);
+
+  const npsVals = withSurvey.map(d => d.survey.nps).filter(v => v !== '' && v !== undefined && v !== null).map(Number);
+  const npsAvg = npsVals.length ? (npsVals.reduce((a,b)=>a+b,0)/npsVals.length).toFixed(1) : 'N/A';
+  const npsPromoter = npsVals.filter(v=>v>=4).length;
+  const npsDetractor = npsVals.filter(v=>v<=2).length;
+  const npsScore = npsVals.length ? Math.round((npsPromoter-npsDetractor)/npsVals.length*100) : 'N/A';
+
+  return `당신은 서비스 기획자를 위한 현장 테스트 데이터 분석가입니다.
+아래는 단골UP(PAYCO 기반 오피스 상권 픽업·현장취식 O2O 멤버십 서비스)의 사내 현장 테스트 결과입니다.
+총 제출 ${allSubmissions.length}건, 사용자 후기 ${n}건을 기반으로 분석해주세요.
+
+## 서비스 개요
+- 오피스 상권 근처 식당·카페 대상 단골 멤버십 서비스
+- PAYCO 앱: 자동 적립, 직접 쿠폰 사용, 사전 픽업 주문
+- 현장 멤버십 웹: 수기 적립 요청, 사장님 쿠폰 확인, 앱 미설치자 대상
+- 쿠폰 구조: 사용하면 새 쿠폰 재발급 (무한 반복)
+- 내부 논쟁: 앱 중심 전략 vs 웹 완결성 전략
+
+## 시나리오 통과율
+${scenarioSummary}
+
+## 사용자 후기 집계 (n=${n})
+
+### 앱/웹 전략 판단
+- 앱 설치 진입 장벽 예상: ${dist('barrier')}
+- 웹 완결성 평가: ${dist('web_enough')}
+- 동료 소개 방식: ${dist('intro')}
+- 앱 설치 감수 이유: ${dist('app_worth')}
+- 앱/웹 기능 차이 인지: ${dist('channel')}
+
+### 쿠폰 경험
+- 쿠폰 사용 여부: ${dist('q10')}
+- 쿠폰 사용 난이도: ${avg('q11')} / 5점
+- 쿠폰 체감 매력도: ${avg('coupon_appeal')} / 5점
+- 쿠폰 재방문 동인: ${dist('coupon_revisit')}
+- 재발급 구조 인지: ${dist('coupon_reissue')}
+
+### 서비스 가치
+- 앱 주문 직관성: ${avg('q3')} / 5점
+- 멤버십 재방문 영향: ${avg('revisit')} / 5점
+- 저녁·주말 이용 의향: ${avg('offpeak')} / 5점
+- 전반적 만족도: ${avg('q12')} / 5점
+
+### NPS (0~5점)
+- 평균: ${npsAvg}점 / NPS 스코어: ${npsScore}
+- 추천(4~5): ${npsPromoter}명 / 비추(0~2): ${npsDetractor}명
+
+### 가맹점 확장
+- 확장 희망 이유: ${dist('expand_why')}
+- 확장 희망 업종: ${multiDist('expand')}
+
+### QR 오더 수요
+- QR 웹 주문 의향 (앱 없이): ${dist('qr_web')}
+- QR 주문 시 앱 설치 의향: ${dist('qr_app')}
+
+### 자유 의견
+${notes.length ? notes.map((t,i)=>`${i+1}. ${t}`).join('\n') : '없음'}
+
+---
+
+## 분석 요청
+
+다음 6가지 관점에서 한국어로 분석해주세요. 각 섹션은 **굵은 제목**으로 구분하고, 데이터 수치를 근거로 명확하게 서술해주세요.
+
+1. **서비스 기본 완성도** — 시나리오 통과율 기반으로 어떤 기능이 안정적이고 어디가 취약한지
+2. **쿠폰 전략 유효성** — 쿠폰이 실제 재방문 동인이 되고 있는지, 재발급 구조가 사용자에게 인지되고 있는지
+3. **앱 vs 웹 전략 판단** — 진입 장벽 인식, 웹 완결성 평가, 소개 방식 데이터를 종합해 어느 방향이 더 유효한지
+4. **QR 오더 전략 방향** — QR 웹 주문 의향과 앱 설치 의향 데이터를 종합해 웹 QR / 앱 QR / 둘 다 중 어떤 방향이 맞는지 판단. 현재 픽업+현장취식 UX의 어색함도 고려할 것
+5. **오피스 상권 서비스 효과** — NPS, 재방문 의향, 저녁·주말 이용 의향으로 본 오피스 상권 적합성
+6. **가맹점 카테고리 확장 시그널** — 확장 희망 이유와 업종 데이터로 본 확장 우선순위 제안
+7. **현재 기능 개선 포인트** — 자유 의견 + 실패 시나리오 + 낮은 점수 항목 기반으로 지금 당장 고쳐야 할 것과 다음 스프린트에서 다룰 것을 구분해서 제시
+
+마지막에 **한 줄 요약**으로 전체 인사이트를 압축해주세요.`;
+}
+
+async function runAIAnalysis() {
+  const apiKey = document.getElementById('aiApiKeyInput')?.value.trim() || localStorage.getItem('claudeApiKey') || '';
+  if (!apiKey) { showToast('API 키를 먼저 입력해주세요'); return; }
+
+  const resultEl = document.getElementById('aiResult');
+  resultEl.innerHTML = `
+  <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:24px;text-align:center;">
+    <div style="font-size:24px;margin-bottom:12px;">🤖</div>
+    <div style="font-size:14px;color:var(--ink-2);font-weight:600;">데이터 분석 중...</div>
+    <div style="font-size:12px;color:var(--ink-4);margin-top:4px;">잠시만 기다려주세요</div>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:6px;" id="aiDots">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--nhn-blue);animation:pulse 1s infinite 0s"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--nhn-blue);animation:pulse 1s infinite 0.3s"></div>
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--nhn-blue);animation:pulse 1s infinite 0.6s"></div>
+    </div>
+  </div>
+  <style>@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}</style>`;
+
+  try {
+    const prompt = buildAnalysisPrompt(_adminResultData, _adminAllSubmissions);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.content[0].text;
+
+    // 마크다운 → HTML 간단 변환
+    const html = text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<h4 style="font-size:13px;color:var(--ink-3);margin:16px 0 6px;">$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:var(--ink-1);margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--line-soft);">$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:var(--ink-1);margin:0 0 12px;">$1</h2>')
+      .replace(/^- (.+)$/gm, '<li style="font-size:13px;color:var(--ink-2);line-height:1.7;margin-left:16px;">$1</li>')
+      .replace(/\n\n/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+
+    resultEl.innerHTML = `
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:20px;line-height:1.7;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line-soft);">
+        <div style="font-size:14px;font-weight:700;color:var(--ink-1);">✨ AI 분석 결과</div>
+        <div style="font-size:11px;color:var(--ink-4);">${new Date().toLocaleString('ko-KR')}</div>
+      </div>
+      <div style="font-size:13px;color:var(--ink-2);line-height:1.8;">${html}</div>
+    </div>`;
+  } catch(e) {
+    resultEl.innerHTML = `
+    <div style="background:#fff3f3;border:1px solid #fca5a5;border-radius:12px;padding:16px;color:#dc2626;font-size:13px;">
+      ⚠️ 오류: ${e.message}<br>
+      <span style="font-size:11px;color:var(--ink-4);margin-top:4px;display:block;">API 키를 확인하거나 잠시 후 다시 시도해주세요</span>
+    </div>`;
+  }
 }
 
 function renderAdminSurvey(el, allSubmissions) {
@@ -1686,6 +2438,50 @@ function renderAdminSurvey(el, allSubmissions) {
   }
 
   // 선택형 카드 (구글폼 스타일 가로 바)
+  function npsCard() {
+    const vals = surveys.map(s=>s.nps).filter(v=>v!==''&&v!==undefined&&v!==null).map(Number);
+    if (!vals.length) return '';
+    const avgVal = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
+    const promoter = vals.filter(v=>v>=4).length;
+    const passive = vals.filter(v=>v===3).length;
+    const detractor = vals.filter(v=>v<=2).length;
+    const npsScore = Math.round((promoter-detractor)/vals.length*100);
+    const scoreColor = npsScore >= 50 ? '#34a853' : npsScore >= 0 ? '#fbbc04' : '#ea4335';
+    const bars = [0,1,2,3,4,5].map(n => {
+      const cnt = vals.filter(v=>v===n).length;
+      const pct = cnt/vals.length*100;
+      const color = n<=2?'#ea4335':n<=3?'#fbbc04':'#34a853';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+        <div style="font-size:10px;color:#5f6368;">${cnt||''}</div>
+        <div style="background:${color};width:100%;border-radius:3px 3px 0 0;" style2="height:${Math.max(pct*1.2,2)}px">
+          <div style="height:${Math.max(pct*1.2,2)}px;background:${color};border-radius:3px 3px 0 0;"></div>
+        </div>
+        <div style="font-size:10px;color:#5f6368;">${n}</div>
+      </div>`;
+    }).join('');
+    return `
+    <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5f6368;margin-bottom:4px;">Q18</div>
+      <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:12px;">NPS (추천 의향)</div>
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:32px;font-weight:700;color:#1a73e8;line-height:1">${avgVal}</div>
+          <div style="font-size:11px;color:#5f6368;">평균 점수</div>
+        </div>
+        <div>
+          <div style="font-size:32px;font-weight:700;color:${scoreColor};line-height:1">${npsScore>0?'+':''}${npsScore}</div>
+          <div style="font-size:11px;color:#5f6368;">NPS 점수</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:2px;height:48px;align-items:flex-end;margin-bottom:4px;">${bars}</div>
+      <div style="display:flex;gap:12px;font-size:11px;margin-top:8px;">
+        <span style="color:#34a853;">추천(4-5): ${promoter}명</span>
+        <span style="color:#fbbc04;">중립(3): ${passive}명</span>
+        <span style="color:#ea4335;">비추(0-2): ${detractor}명</span>
+      </div>
+    </div>`;
+  }
+
   function choiceCard(label, fn, qNum) {
     const dist = countDist(fn);
     if (!dist.length) return '';
@@ -1773,14 +2569,6 @@ function renderAdminSurvey(el, allSubmissions) {
   html += sectionHeader('앱 사용성');
   html += gridWrap([
     scaleCard('앱 주문 직관성', s=>s.q3, 'Q3', '매우 불편', '매우 편리'),
-    scaleCard('적립 결과 확인 용이성', s=>s.q4, 'Q4', '못 찾겠음', '바로 확인됨'),
-    choiceCard('앱 불편사항', s=>s.q5, 'Q5'),
-  ]);
-
-  html += sectionHeader('멤버십');
-  html += gridWrap([
-    scaleCard('적립 확인 용이성', s=>s.q6, 'Q6', '확인 어려움', '매우 쉬움'),
-    scaleCard('적립 현황 명확성', s=>s.q7, 'Q7', '전혀 명확하지 않음', '매우 명확함'),
   ]);
 
   html += sectionHeader('포스 수기 적립');
@@ -1805,19 +2593,49 @@ function renderAdminSurvey(el, allSubmissions) {
   html += gridWrap([
     choiceCard('쿠폰 사용 여부', s=>s.q10, 'Q10'),
     scaleCard('쿠폰 사용 난이도', s=>s.q11, 'Q11', '매우 어려움', '매우 쉬움'),
+    scaleCard('쿠폰 체감 매력도', s=>s.coupon_appeal, 'Q12', '전혀 매력 없음', '매우 매력적'),
+    choiceCard('쿠폰 재방문 동인', s=>s.coupon_revisit, 'Q13'),
+    choiceCard('재발급 구조 인지', s=>s.coupon_reissue, 'Q14'),
+  ]);
+
+  html += sectionHeader('서비스 가치 분석');
+  html += gridWrap([
+    scaleCard('멤버십 재방문 영향', s=>s.revisit, 'Q15', '전혀 아님', '매우 그렇다'),
+    scaleCard('저녁·주말 이용 의향', s=>s.offpeak, 'Q14', '전혀 아님', '매우 그렇다'),
+    scaleCard('픽업 예약 기능 유용성', s=>s.prebook, 'Q15', '전혀 아님', '매우 유용'),
+    choiceCard('단골UP 첫 진입 경로', s=>s.entry, 'Q16'),
+    choiceCard('앱/웹 기능 차이 인지', s=>s.channel, 'Q19'),
+  ]);
+
+  html += sectionHeader('앱 vs 웹 전략 판단');
+  html += gridWrap([
+    choiceCard('앱 설치 진입 장벽 (일반 고객 예상)', s=>s.barrier, 'QA'),
+    choiceCard('웹 완결성 (앱 없이 충분한가)', s=>s.web_enough, 'QB'),
+    choiceCard('동료 소개 방식', s=>s.intro, 'QC'),
+    choiceCard('앱 설치 감수 이유', s=>s.app_worth, 'QD'),
+  ]);
+
+  html += sectionHeader('서비스 확장성');
+  html += gridWrap([
+    npsCard(),
+    choiceCard('확장 희망 이유', s=>s.expand_why, 'Q19'),
+    choiceCard('확장 희망 업종', s => Array.isArray(s.expand) ? s.expand.join(' / ') : s.expand, 'Q20'),
+    choiceCard('QR 웹 주문 의향', s=>s.qr_web, 'Q21'),
+    choiceCard('QR 주문 시 앱 설치 의향', s=>s.qr_app, 'Q22'),
   ]);
 
   html += sectionHeader('전반적 만족도');
   html += gridWrap([
-    scaleCard('전반적인 서비스 만족도', s=>s.q12, 'Q12', '매우 불만족', '매우 만족'),
+    scaleCard('전반적인 서비스 만족도', s=>s.q12, 'Q23', '매우 불만족', '매우 만족'),
   ]);
+
 
   if (freeTexts.length) {
     html += sectionHeader('자유 의견');
     html += `<div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12);margin-bottom:16px;overflow:hidden;">
       <button onclick="toggleFreeText(this)" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border:none;background:none;cursor:pointer;text-align:left;">
         <div>
-          <div style="font-size:11px;color:#5f6368;margin-bottom:2px;">Q13</div>
+          <div style="font-size:11px;color:#5f6368;margin-bottom:2px;">Q24</div>
           <div style="font-size:15px;font-weight:500;color:#202124;">개선이 필요하다고 느낀 점이나 추가 기능 제안</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:12px;">
@@ -1848,10 +2666,12 @@ document.querySelectorAll('.header-date').forEach(el => el.textContent = todaySt
 const savedDate = localStorage.getItem('mySignupDate');
 if (savedDate !== todayStr) {
   localStorage.removeItem('mySignup');
+  localStorage.removeItem('submittedStores');
   localStorage.setItem('mySignupDate', todayStr);
 }
 
 renderScales();
+renderNPS();
 
 // ══════════════════════════════════════════════
 // Firebase 초기화
@@ -2075,7 +2895,10 @@ function showEntryPage(page) {
   document.getElementById('page-entry').style.display = page === 'entry' ? 'block' : 'none';
   document.getElementById('page-signup').style.display = page === 'signup' ? 'block' : 'none';
   document.getElementById('page-store-select').style.display = page === 'store-select' ? 'block' : 'none';
+  document.getElementById('page-case-select').style.display = 'none';
+  document.getElementById('mainApp').classList.add('hidden');
   if (page === 'signup') initSignup();
+  if (page === 'store-select') initStoreSelect();
 }
 
 // 진입
