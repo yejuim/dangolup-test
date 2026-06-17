@@ -1046,6 +1046,8 @@ const STORES = [
   { id:"M06", name:"92소 명품한우(에이스하이엔드지점)",  type:"식당", membership:"point", orderType:"pickup", location:"에이스하이앤드타워1차 스타벅스 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/_SOjz9MI_y62XxYbhDk7hg" },
   { id:"M07", name:"오징어 맛집",                        type:"식당", membership:"point", orderType:"pickup", location:"쉐라톤 포포인트 호텔 옆 건물 지하 1층", webUrl:"https://app-dangolup.payco.com/entry/sKEWLty9dBMnm4vJHzYG4g" },
   { id:"M08", name:"영향",                               type:"식당", membership:"point", orderType:"pickup", location:"금천구 남부순환로108길 7 1층 (정문 방향 도보 15~20분)", webUrl:"https://app-dangolup.payco.com/entry/a0WHapU-eLtnQoFa2TpkGw" },
+  { id:"M09", name:"우지커피(구로한신점)",               type:"카페", membership:"stamp", orderType:"pickup", location:"서울 구로구 디지털로 272 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/dKeLXi8gxcHJfNfil6wD3A" },
+  { id:"M10", name:"군산아구찜",                         type:"식당", membership:"point", orderType:"pickup", location:"서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/nhHLL4ebM_B5FYAfpNMJCw" },
 ];
 
 // ══════════════════════════════════════════════
@@ -1321,27 +1323,38 @@ function initStoreSelect() {
     return;
   }
   const submitted = JSON.parse(localStorage.getItem('submittedStores') || '[]');
-  document.getElementById('storeBtnList').innerHTML = STORES.map(s => {
-    const isDone = submitted.includes(s.id);
-    return `
-    <button class="store-btn" onclick="${isDone ? '' : `selectStore('${s.id}')`}" ${isDone ? 'disabled' : ''} style="${isDone ? 'opacity:0.45;cursor:default;' : ''}">
-      <div class="store-btn-content">
-        <div class="store-btn-name">${s.name}${isDone ? ' <span style="font-size:12px;color:#01a058;font-weight:600;">제출 완료 ✅</span>' : ''}</div>
-        ${s.location ? `<div class="store-btn-location">📍 ${s.location}</div>` : ''}
-        <div class="store-btn-meta">
-          <span class="store-tag tag-type">${s.type}</span>
-          ${ s.membership === 'stamp' ? '<span class="store-tag tag-stamp">스탬프형</span>'
-           : s.membership === 'point' ? '<span class="store-tag tag-point">포인트형</span>'
-           : '<span class="store-tag tag-nomembership">멤버십 미사용</span>' }
-          ${ s.orderType === 'pickup'   ? '<span class="store-tag tag-order">픽업</span>'
-           : s.orderType === 'delivery' ? '<span class="store-tag tag-order">배달</span>'
-           : s.orderType === 'both'     ? '<span class="store-tag tag-order">픽업+배달</span>'
-           : '<span class="store-tag tag-order">주문 미사용</span>' }
+  const listEl = document.getElementById('storeBtnList');
+  listEl.innerHTML = '';
+
+  ['식당', '카페'].forEach(type => {
+    const stores = STORES.filter(s => s.type === type);
+    if (!stores.length) return;
+    const section = document.createElement('div');
+    section.innerHTML = `<div style="padding:16px 20px 6px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.03em;">${type === '식당' ? '🍱' : '☕'} ${type}</div>`;
+    stores.forEach(s => {
+      const isDone = submitted.includes(s.id);
+      const btn = document.createElement('div');
+      btn.innerHTML = `
+      <button class="store-btn" onclick="${isDone ? '' : `selectStore('${s.id}')`}" ${isDone ? 'disabled' : ''} style="${isDone ? 'opacity:0.45;cursor:default;' : ''}">
+        <div class="store-btn-content">
+          <div class="store-btn-name">${s.name}${isDone ? ' <span style="font-size:12px;color:#01a058;font-weight:600;">제출 완료 ✅</span>' : ''}</div>
+          ${s.location ? `<div class="store-btn-location">📍 ${s.location}</div>` : ''}
+          <div class="store-btn-meta">
+            ${ s.membership === 'stamp' ? '<span class="store-tag tag-stamp">스탬프형</span>'
+             : s.membership === 'point' ? '<span class="store-tag tag-point">포인트형</span>'
+             : '<span class="store-tag tag-nomembership">멤버십 미사용</span>' }
+            ${ s.orderType === 'pickup'   ? '<span class="store-tag tag-order">픽업</span>'
+             : s.orderType === 'delivery' ? '<span class="store-tag tag-order">배달</span>'
+             : s.orderType === 'both'     ? '<span class="store-tag tag-order">픽업+배달</span>'
+             : '<span class="store-tag tag-order">주문 미사용</span>' }
+          </div>
         </div>
-      </div>
-      <div class="store-btn-chevron">${isDone ? '' : '›'}</div>
-    </button>`;
-  }).join('');
+        <div class="store-btn-chevron">${isDone ? '' : '›'}</div>
+      </button>`;
+      section.appendChild(btn);
+    });
+    listEl.appendChild(section);
+  });
 }
 
 let selectedCase = null;
@@ -2788,6 +2801,8 @@ const SLOTS = [
   { id:'S09', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
   { id:'S10', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
   { id:'S11', store:'코앤커피',                          location:'에이스하이앤드타워1차 구내식당 옆', type:'카페' },
+  { id:'S12', store:'우지커피(구로한신점)',              location:'서울 구로구 디지털로 272 1층 (후문 방향)', type:'카페' },
+  { id:'S13', store:'군산아구찜',                        location:'서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)', type:'식당' },
 ];
 
 let selectedSlotId = null;
