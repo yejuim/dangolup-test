@@ -579,9 +579,7 @@
       </a>
     </div>
     <div id="scenarioList"></div>
-    <div style="margin:24px 0 8px;padding:16px;background:#f0f7ff;border-radius:12px;text-align:center;font-size:13px;color:var(--nhn-blue);line-height:1.6;">
-      테스트를 완료했다면 <strong>사용자 후기</strong>를 남겨주세요 🙏
-    </div>
+    <button class="submit-btn" onclick="switchTab('user-survey')" style="margin-top:16px;">후기 작성하기 →</button>
   </div>
 
   <!-- 시나리오 상세 -->
@@ -983,7 +981,7 @@
         <textarea id="u_q13" placeholder="자유롭게 입력해 주세요"></textarea>
       </div>
     </div>
-    <button class="submit-btn" onclick="submitUserSurvey()">후기 제출</button>
+    <button class="submit-btn" id="finalSubmitBtn" onclick="submitUserSurvey()">최종 제출</button>
   </div>
 
   <!-- 결과 -->
@@ -997,7 +995,6 @@
       <div class="stat-card"><div class="stat-num blue" id="r-user-survey">0</div><div class="stat-label">사용자 후기</div></div>
       <div class="stat-card"><div class="stat-num red" id="r-issues">0</div><div class="stat-label">이슈</div></div>
     </div>
-    <button class="submit-btn" id="submitResultBtn" onclick="submitResultToFirebase()" style="margin-top:8px;">결과 제출하기</button>
     <div id="resultList"></div>
     <button class="reset-btn" onclick="resetAll()">전체 초기화</button>
   </div>
@@ -1712,7 +1709,7 @@ function getChecks(name) {
 function submitUserSurvey() {
   const data = {
     type:'user', ts: new Date().toLocaleString('ko-KR'),
-    store: currentStore.name,
+    store: currentStore ? currentStore.name : '미선택',
     order_type: getRadio('u_order_type'),
     q3:getScale('u_q3'),
     barrier: getRadio('u_q_barrier'),
@@ -1759,8 +1756,7 @@ function submitUserSurvey() {
   const surveys = JSON.parse(localStorage.getItem('surveys')||'[]');
   surveys.push(data);
   localStorage.setItem('surveys', JSON.stringify(surveys));
-  showToast('후기가 제출됐어요!');
-  setTimeout(() => switchTab('results'), 800);
+  submitResultToFirebase();
 }
 
 // ── 결과 ──
@@ -1852,11 +1848,7 @@ function getTeamName() {
 }
 
 function submitResultToFirebase() {
-  const team = getTeamName();
-  if (!team) {
-    showToast('매장 신청 시 입력한 소속/팀 정보가 없어요.\n먼저 테스트 매장을 신청해 주세요.');
-    return;
-  }
+  const team = getTeamName() || '미입력';
   const state = loadState();
   const scenarios = {};
   currentScenarios.forEach(s => {
@@ -1878,14 +1870,13 @@ function submitResultToFirebase() {
     survey: mySurvey || null,
   };
 
-  const btn = document.getElementById('submitResultBtn');
-  btn.disabled = true;
-  btn.textContent = '제출 중...';
+  const btn = document.getElementById('finalSubmitBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '제출 중...'; }
 
   db.ref(`results/${todayStr}/${storeKey}`).push(payload)
     .then(() => {
       showToast('결과가 제출됐어요! ✅');
-      btn.textContent = '제출 완료 ✅';
+      if (btn) btn.textContent = '제출 완료 ✅';
       // 제출 완료 매장 localStorage에 기록
       const submitted = JSON.parse(localStorage.getItem('submittedStores') || '[]');
       if (currentStore && !submitted.includes(currentStore.id)) {
@@ -1901,7 +1892,7 @@ function submitResultToFirebase() {
     .catch(() => {
       showToast('제출 실패. 다시 시도해 주세요.');
       btn.disabled = false;
-      btn.textContent = '결과 제출하기';
+      if (btn) btn.textContent = '최종 제출';
     });
 }
 
