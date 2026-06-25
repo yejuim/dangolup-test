@@ -1857,8 +1857,6 @@ function submitResultToFirebase() {
     showToast('매장 신청 시 입력한 소속/팀 정보가 없어요.\n먼저 테스트 매장을 신청해 주세요.');
     return;
   }
-  if (!currentStore) { showToast('매장을 먼저 선택해 주세요.'); return; }
-
   const state = loadState();
   const scenarios = {};
   currentScenarios.forEach(s => {
@@ -1869,11 +1867,11 @@ function submitResultToFirebase() {
   const surveys = JSON.parse(localStorage.getItem('surveys') || '[]');
   const mySurvey = surveys.filter(s => s.type === 'user').slice(-1)[0] || null;
 
-  const storeKey = currentStore.name.replace(/[.#$[\]/]/g, '_');
+  const storeKey = (currentStore ? currentStore.name : '미선택').replace(/[.#$[\]/]/g, '_');
   const teamKey = team.replace(/[.#$[\]/]/g, '_');
 
   const payload = {
-    store: currentStore.name,
+    store: currentStore ? currentStore.name : '미선택',
     team,
     ts: new Date().toLocaleString('ko-KR'),
     scenarios,
@@ -1890,7 +1888,7 @@ function submitResultToFirebase() {
       btn.textContent = '제출 완료 ✅';
       // 제출 완료 매장 localStorage에 기록
       const submitted = JSON.parse(localStorage.getItem('submittedStores') || '[]');
-      if (!submitted.includes(currentStore.id)) {
+      if (currentStore && !submitted.includes(currentStore.id)) {
         submitted.push(currentStore.id);
         localStorage.setItem('submittedStores', JSON.stringify(submitted));
       }
@@ -1963,7 +1961,7 @@ function adminRefresh() {
 
   db.ref('results').once('value', snapshot => {
     const allData = snapshot.val() || {};
-    const dates = Object.keys(allData);
+    const dates = Object.keys(allData).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
     renderAdminDateBar(dates);
 
     // 날짜 필터링
@@ -2000,6 +1998,8 @@ function adminRefresh() {
     } else if (currentAdminTab === 'ai') {
       renderAdminAI(el, filteredData, allSubmissions);
     }
+  }, err => {
+    el.innerHTML = `<div style="text-align:center;color:#dc2626;padding:40px 16px;font-size:13px;">Firebase 읽기 실패: ${err.message}<br><br><button onclick="adminRefresh()" style="padding:8px 20px;background:#191919;color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer;">다시 시도</button></div>`;
   });
 }
 
@@ -2218,7 +2218,8 @@ function renderAdminResult(el, data) {
 // ── AI 분석 ──
 function renderAdminAI(el, resultData, allSubmissions) {
   const apiKey = localStorage.getItem('claudeApiKey') || '';
-  const hasKey = !!apiKey;
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const hasKey = !!apiKey && isLocal;
 
   const keySection = hasKey ? `
     <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:16px;margin-bottom:12px;">
@@ -2260,6 +2261,12 @@ function renderAdminAI(el, resultData, allSubmissions) {
 function renderAIResultCards(parsed, ts) {
   const resultEl = document.getElementById('aiResult');
   if (!resultEl || !parsed) return;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed); } catch(e) {
+      resultEl.innerHTML = `<div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:20px;font-size:13px;color:var(--ink-2);white-space:pre-wrap;">${parsed}</div>`;
+      return;
+    }
+  }
 
   const statusConfig = {
     good:    { bg: '#f0fdf4', border: '#86efac', dot: '#22c55e', label: '양호' },
@@ -2473,7 +2480,7 @@ async function runAIAnalysis() {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 2048,
+        max_tokens: 8192,
         system: '당신은 JSON만 출력하는 분석 엔진입니다. 사용자의 요청에 대해 반드시 유효한 JSON 객체만 출력하세요. 마크다운 코드블록(```), 설명 텍스트, 줄 구분선(--, ---), 표(|) 등 JSON 이외의 어떤 문자도 출력하면 안 됩니다. 첫 글자는 반드시 { 이어야 합니다.',
         messages: [{ role: 'user', content: prompt }, { role: 'assistant', content: '{' }]
       })
@@ -2488,14 +2495,16 @@ async function runAIAnalysis() {
     // JSON 파싱
     let parsed;
     try {
-      // JSON 블록만 추출
-      // assistant prefill로 { 를 넣었으므로 앞에 붙여서 파싱
-      const fullText = rawText.startsWith('{') ? rawText : '{' + rawText;
-      const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-      parsed = JSON.parse(jsonMatch ? jsonMatch[0] : fullText);
+      // 마크다운 코드블록 제거
+      let clean = rawText.replace(/^```[a-z]*\n?/i, '').replace(/```$/,'').trim();
+      // prefill로 { 를 넣었으므로 앞에 붙이기
+      if (!clean.startsWith('{')) clean = '{' + clean;
+      // 마지막 } 이후 불필요한 텍스트 제거
+      const lastBrace = clean.lastIndexOf('}');
+      if (lastBrace !== -1) clean = clean.slice(0, lastBrace + 1);
+      parsed = JSON.parse(clean);
     } catch(parseErr) {
-      // JSON 파싱 실패 시 plain text fallback
-      resultEl.innerHTML = `<div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:20px;font-size:13px;color:var(--ink-2);white-space:pre-wrap;">${rawText}</div>`;
+      resultEl.innerHTML = `<div style="background:#fff3f3;border:1px solid #fca5a5;border-radius:12px;padding:16px;color:#dc2626;font-size:13px;">JSON 파싱 실패: ${parseErr.message}<br><pre style="font-size:11px;margin-top:8px;white-space:pre-wrap;color:var(--ink-3);">${rawText.slice(0,300)}</pre></div>`;
       return;
     }
 
