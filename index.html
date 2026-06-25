@@ -1037,14 +1037,19 @@
 const STORES = [
   { id:"M01", name:"박가부대 구로에이스하이엔드 2차점",   type:"식당", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/zgQLh7GHZOIbcsfFlgjrwg" },
   { id:"M02", name:"텐퍼센트커피 구로하이엔드타워 2차점", type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층",  webUrl:"https://app-dangolup.payco.com/entry/Rr30wKr9_cDz9Hd7fINWwg" },
-  { id:"M03", name:"소림사 구로디지털점",                 type:"카페", membership:"none",  orderType:"pickup", location:"정문 방향 넷마블 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/N0W2iZj6XLxwWtcmdlvVxQ" },
+  { id:"M03", name:"소림사 구로디지털점",                 type:"카페", membership:"none",  orderType:"pickup", location:"정문 방향 넷마블 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/N0W2iZj6XLxwWtcmdlvVxQ", hidden:true },
   { id:"M04", name:"코멧",                               type:"카페", membership:"stamp", orderType:"pickup", location:"구로구 구로동 826-1 대로변 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/h5UTY-5R1NLsrV9PGNUW8Q" },
   { id:"M05", name:"코앤커피",                           type:"카페", membership:"stamp", orderType:"pickup", location:"에이스하이앤드타워1차 구내식당 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/xodxnql-oz3KZM7bp8a_CQ" },
   { id:"M06", name:"92소 명품한우(에이스하이엔드지점)",  type:"식당", membership:"point", orderType:"pickup", location:"에이스하이앤드타워1차 스타벅스 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/_SOjz9MI_y62XxYbhDk7hg" },
-  { id:"M07", name:"오징어 맛집",                        type:"식당", membership:"point", orderType:"pickup", location:"쉐라톤 포포인트 호텔 옆 건물 지하 1층", webUrl:"https://app-dangolup.payco.com/entry/sKEWLty9dBMnm4vJHzYG4g" },
+  { id:"M07", name:"오징어 맛집",                        type:"식당", membership:"point", orderType:"pickup", location:"쉐라톤 포포인트 호텔 옆 건물 지하 1층", webUrl:"https://app-dangolup.payco.com/entry/sKEWLty9dBMnm4vJHzYG4g", hidden:true },
   { id:"M08", name:"영향",                               type:"식당", membership:"point", orderType:"pickup", location:"금천구 남부순환로108길 7 1층 (정문 방향 도보 15~20분)", webUrl:"https://app-dangolup.payco.com/entry/a0WHapU-eLtnQoFa2TpkGw" },
   { id:"M09", name:"우지커피(구로한신점)",               type:"카페", membership:"stamp", orderType:"pickup", location:"서울 구로구 디지털로 272 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/dKeLXi8gxcHJfNfil6wD3A" },
   { id:"M10", name:"군산아구찜",                         type:"식당", membership:"point", orderType:"pickup", location:"서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/nhHLL4ebM_B5FYAfpNMJCw" },
+  { id:"M11", name:"스시월(구로점)",                     type:"식당", membership:"none",  orderType:"pickup", location:"서울특별시 구로구 디지털로26길 90 1층 후문 방향", webUrl:"" },
+  { id:"M12", name:"이치돈부리(구로디지털점)",           type:"식당", membership:"point", orderType:"pickup", location:"서울특별시 구로구 디지털로26길 111 1층", webUrl:"" },
+  { id:"M13", name:"명품임실치즈피자",                   type:"식당", membership:"point", orderType:"pickup", location:"가산초등학교 건너편", webUrl:"" },
+  { id:"M14", name:"명동 할머니국수",                    type:"식당", membership:"point", orderType:"pickup", location:"후문 방향 사거리 코오롱싸이언스밸리2차 지하1층", webUrl:"" },
+  { id:"M15", name:"커피마마퀸",                         type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 한화비즈메트로 1차 1층", webUrl:"" },
 ];
 
 // ══════════════════════════════════════════════
@@ -1324,7 +1329,7 @@ function initStoreSelect() {
   listEl.innerHTML = '';
 
   ['식당', '카페'].forEach(type => {
-    const stores = STORES.filter(s => s.type === type);
+    const stores = STORES.filter(s => s.type === type && !s.hidden);
     if (!stores.length) return;
     const section = document.createElement('div');
     section.innerHTML = `<div style="padding:16px 20px 6px;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.03em;">${type === '식당' ? '🍱' : '☕'} ${type}</div>`;
@@ -2795,11 +2800,7 @@ const SLOTS = [
   { id:'S03', store:'오징어 맛집',                       location:'쉐라톤 포포인트 호텔 옆 건물 지하 1층', type:'식당' },
   { id:'S04', store:'영향',                              location:'금천구 남부순환로108길 7 1층', type:'식당' },
   { id:'S05', store:'텐퍼센트커피 구로하이엔드타워 2차점', location:'정문 방향 길건너 건물 1층', type:'카페' },
-  { id:'S06', store:'텐퍼센트커피 구로하이엔드타워 2차점', location:'정문 방향 길건너 건물 1층', type:'카페' },
-  { id:'S07', store:'소림사 구로디지털점',                location:'정문 방향 넷마블 길건너 건물 1층', type:'카페' },
-  { id:'S08', store:'소림사 구로디지털점',                location:'정문 방향 넷마블 길건너 건물 1층', type:'카페' },
   { id:'S09', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
-  { id:'S10', store:'코멧',                              location:'구로구 구로동 826-1 대로변 1층', type:'카페' },
   { id:'S11', store:'코앤커피',                          location:'에이스하이앤드타워1차 구내식당 옆', type:'카페' },
   { id:'S12', store:'우지커피(구로한신점)',              location:'서울 구로구 디지털로 272 1층 (후문 방향)', type:'카페' },
   { id:'S13', store:'군산아구찜',                        location:'서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)', type:'식당' },
