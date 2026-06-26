@@ -113,6 +113,7 @@
   .tag-point        { color: var(--nhn-blue); background: rgba(15,128,246,0.10); }
   .tag-nomembership { color: var(--caption); background: rgba(0,0,0,0.06); }
   .tag-type, .tag-order { color: var(--meta); background: rgba(0,0,0,0.07); }
+  .tag-sikwon { color: #b45309; background: rgba(245,158,11,0.12); }
 
   /* ── NAV ── */
   .nav {
@@ -1035,20 +1036,20 @@
 // webUrl     : 적립 내역 확인용 모바일 웹 URL (없으면 null)
 // ══════════════════════════════════════════════
 const STORES = [
-  { id:"M01", name:"박가부대 구로에이스하이엔드 2차점",   type:"식당", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/zgQLh7GHZOIbcsfFlgjrwg" },
-  { id:"M02", name:"텐퍼센트커피 구로하이엔드타워 2차점", type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 길건너 건물 1층",  webUrl:"https://app-dangolup.payco.com/entry/Rr30wKr9_cDz9Hd7fINWwg" },
+  { id:"M01", name:"박가부대 구로에이스하이엔드 2차점",   type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"정문 방향 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/zgQLh7GHZOIbcsfFlgjrwg" },
+  { id:"M02", name:"텐퍼센트커피 구로하이엔드타워 2차점", type:"카페", membership:"point", orderType:"pickup", sikwon:true,  location:"정문 방향 길건너 건물 1층",  webUrl:"https://app-dangolup.payco.com/entry/Rr30wKr9_cDz9Hd7fINWwg" },
   { id:"M03", name:"소림사 구로디지털점",                 type:"카페", membership:"none",  orderType:"pickup", location:"정문 방향 넷마블 길건너 건물 1층", webUrl:"https://app-dangolup.payco.com/entry/N0W2iZj6XLxwWtcmdlvVxQ", hidden:true },
-  { id:"M04", name:"코멧",                               type:"카페", membership:"stamp", orderType:"pickup", location:"구로구 구로동 826-1 대로변 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/h5UTY-5R1NLsrV9PGNUW8Q" },
-  { id:"M05", name:"코앤커피",                           type:"카페", membership:"stamp", orderType:"pickup", location:"에이스하이앤드타워1차 구내식당 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/xodxnql-oz3KZM7bp8a_CQ" },
-  { id:"M06", name:"92소 명품한우(에이스하이엔드지점)",  type:"식당", membership:"point", orderType:"pickup", location:"에이스하이앤드타워1차 스타벅스 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/_SOjz9MI_y62XxYbhDk7hg" },
+  { id:"M04", name:"코멧",                               type:"카페", membership:"stamp", orderType:"pickup", sikwon:true,  location:"구로구 구로동 826-1 대로변 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/h5UTY-5R1NLsrV9PGNUW8Q" },
+  { id:"M05", name:"코앤커피",                           type:"카페", membership:"stamp", orderType:"pickup", sikwon:true,  location:"에이스하이앤드타워1차 구내식당 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/xodxnql-oz3KZM7bp8a_CQ" },
+  { id:"M06", name:"92소 명품한우(에이스하이엔드지점)",  type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"에이스하이앤드타워1차 스타벅스 옆 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/_SOjz9MI_y62XxYbhDk7hg" },
   { id:"M07", name:"오징어 맛집",                        type:"식당", membership:"point", orderType:"pickup", location:"쉐라톤 포포인트 호텔 옆 건물 지하 1층", webUrl:"https://app-dangolup.payco.com/entry/sKEWLty9dBMnm4vJHzYG4g", hidden:true },
-  { id:"M08", name:"영향",                               type:"식당", membership:"point", orderType:"pickup", location:"금천구 남부순환로108길 7 1층 (정문 방향 도보 15~20분)", webUrl:"https://app-dangolup.payco.com/entry/a0WHapU-eLtnQoFa2TpkGw" },
-  { id:"M09", name:"우지커피(구로한신점)",               type:"카페", membership:"stamp", orderType:"pickup", location:"서울 구로구 디지털로 272 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/dKeLXi8gxcHJfNfil6wD3A" },
-  { id:"M10", name:"군산아구찜",                         type:"식당", membership:"point", orderType:"pickup", location:"서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/nhHLL4ebM_B5FYAfpNMJCw" },
-  { id:"M11", name:"스시월(구로점)",                     type:"식당", membership:"none",  orderType:"pickup", location:"서울특별시 구로구 디지털로26길 90 1층 후문 방향", webUrl:"" },
-  { id:"M12", name:"이치돈부리(구로디지털점)",           type:"식당", membership:"point", orderType:"pickup", location:"서울특별시 구로구 디지털로26길 111 1층", webUrl:"" },
+  { id:"M08", name:"영향",                               type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"금천구 남부순환로108길 7 1층 (정문 방향 도보 15~20분)", webUrl:"https://app-dangolup.payco.com/entry/a0WHapU-eLtnQoFa2TpkGw" },
+  { id:"M09", name:"우지커피(구로한신점)",               type:"카페", membership:"stamp", orderType:"pickup", sikwon:true,  location:"서울 구로구 디지털로 272 1층 (후문 방향)", webUrl:"https://app-dangolup.payco.com/entry/dKeLXi8gxcHJfNfil6wD3A" },
+  { id:"M10", name:"군산아구찜",                         type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)", webUrl:"https://app-dangolup.payco.com/entry/nhHLL4ebM_B5FYAfpNMJCw" },
+  { id:"M11", name:"스시월(구로점)",                     type:"식당", membership:"none",  orderType:"pickup", sikwon:true,  location:"서울특별시 구로구 디지털로26길 90 1층 후문 방향", webUrl:"" },
+  { id:"M12", name:"이치돈부리(구로디지털점)",           type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"서울특별시 구로구 디지털로26길 111 1층", webUrl:"" },
   { id:"M13", name:"명품임실치즈피자",                   type:"식당", membership:"point", orderType:"pickup", location:"가산초등학교 건너편", webUrl:"" },
-  { id:"M14", name:"명동 할머니국수",                    type:"식당", membership:"point", orderType:"pickup", location:"후문 방향 사거리 코오롱싸이언스밸리2차 지하1층", webUrl:"" },
+  { id:"M14", name:"명동 할머니국수",                    type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"후문 방향 사거리 코오롱싸이언스밸리2차 지하1층", webUrl:"" },
   { id:"M15", name:"커피마마퀸",                         type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 한화비즈메트로 1차 1층", webUrl:"" },
 ];
 
@@ -1349,6 +1350,7 @@ function initStoreSelect() {
              : s.orderType === 'delivery' ? '<span class="store-tag tag-order">배달</span>'
              : s.orderType === 'both'     ? '<span class="store-tag tag-order">픽업+배달</span>'
              : '<span class="store-tag tag-order">주문 미사용</span>' }
+            ${ s.sikwon ? '<span class="store-tag tag-sikwon">식권</span>' : '' }
           </div>
         </div>
         <div class="store-btn-chevron">${isDone ? '' : '›'}</div>
@@ -1917,6 +1919,7 @@ let currentAdminDate = '__all__';
 
 function switchAdminTab(tab) {
   currentAdminTab = tab;
+  currentResultStore = null;
   ['result','survey','ai'].forEach(t => {
     const btn = document.getElementById(`adminTab-${t}`);
     if (!btn) return;
@@ -2007,14 +2010,13 @@ function toggleFreeText(btn) {
   arrow.style.transform = open ? 'rotate(180deg)' : '';
 }
 
-let currentResultStore = '__all__';
+let currentResultStore = null;
 let _adminResultData = {};
 let _adminAllSubmissions = [];
+let currentSurveyStore = null;
 
-function filterResultStore(storeKey) {
+function drillIntoStore(storeKey) {
   currentResultStore = storeKey;
-  const sel = document.getElementById('resultStoreSelect');
-  if (sel) sel.value = storeKey;
   renderAdminResult(document.getElementById('adminContent'), _adminResultData);
 }
 
@@ -2128,32 +2130,66 @@ function buildUserCard(d, idx, expanded) {
 
 function renderAdminResult(el, data) {
   _adminResultData = data;
-  const stores = Object.entries(data).map(([k, subs]) => ({
-    key: k,
-    name: Object.values(subs)[0]?.store || k,
-  })).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-  const isAll = currentResultStore === '__all__';
+  // 매장 상세 뷰
+  if (currentResultStore) {
+    const submissions = data[currentResultStore];
+    if (!submissions) { currentResultStore = null; renderAdminResult(el, data); return; }
+    const submissionList = Object.values(submissions);
+    const storeName = submissionList[0]?.store || currentResultStore;
 
-  // 매장 선택 드롭다운
-  const selectHtml = `
-  <div style="margin-bottom:16px;">
-    <select id="resultStoreSelect" onchange="filterResultStore(this.value)"
-      style="width:100%;padding:10px 14px;border:1px solid var(--line-soft);border-radius:10px;font-size:14px;font-weight:600;color:var(--ink-1);background:#fff;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23666%22 stroke-width=%221.5%22 fill=%22none%22/></svg>');background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;">
-      <option value="__all__">전체 매장</option>
-      ${stores.map(s => `<option value="${s.key}" ${currentResultStore === s.key ? 'selected' : ''}>${s.name}</option>`).join('')}
-    </select>
-  </div>`;
+    let totalPass = 0, totalFail = 0, totalSkip = 0, totalNotDone = 0;
+    submissionList.forEach(d => {
+      const sc = Object.values(d.scenarios || {});
+      totalPass += sc.filter(s => s.result === 'pass').length;
+      totalFail += sc.filter(s => s.result === 'fail').length;
+      totalSkip += sc.filter(s => s.result === 'na').length;
+      totalNotDone += sc.filter(s => !s.result || s.result === '미입력').length;
+    });
+    const totalDone = totalPass + totalFail;
+    const totalAll = totalPass + totalFail + totalSkip + totalNotDone;
+    const passRate = totalDone > 0 ? Math.round(totalPass / totalDone * 100) : 0;
+    const rateColor = passRate >= 80 ? '#01a058' : passRate >= 50 ? '#f59e0b' : '#dc2626';
 
-  let html = selectHtml;
+    let html = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button onclick="currentResultStore=null;renderAdminResult(document.getElementById('adminContent'),_adminResultData)"
+          style="background:none;border:none;font-size:22px;color:var(--ink-3);cursor:pointer;padding:0;line-height:1;">‹</button>
+        <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${storeName}</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:26px;font-weight:700;color:${rateColor};min-width:52px;">${passRate}%</div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-4);margin-bottom:4px;">
+              <span>테스트 ${totalDone}건 중 ${totalPass}건 통과</span>
+              <span>${totalSkip ? `제외 ${totalSkip}` : ''}${totalSkip && totalNotDone ? ' · ' : ''}${totalNotDone ? `<span style="color:#f59e0b;">미입력 ${totalNotDone}</span>` : ''}</span>
+            </div>
+            <div style="background:#f1f3f4;border-radius:6px;height:8px;overflow:hidden;display:flex;">
+              <div style="background:#01a058;height:100%;width:${totalAll > 0 ? Math.round(totalPass/totalAll*100) : 0}%;"></div>
+              <div style="background:#dc2626;height:100%;width:${totalAll > 0 ? Math.round(totalFail/totalAll*100) : 0}%;"></div>
+              <div style="background:#e5e7eb;height:100%;width:${totalAll > 0 ? Math.round(totalSkip/totalAll*100) : 0}%;"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:5px;font-size:11px;">
+              <span style="color:#01a058;font-weight:600;">● Pass ${totalPass}</span>
+              <span style="color:#dc2626;font-weight:600;">● Fail ${totalFail}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
 
+    submissionList.forEach((d, idx) => { html += buildUserCard(d, idx, false); });
+    el.innerHTML = html;
+    return;
+  }
+
+  // 매장 목록 뷰
+  let html = '';
   Object.entries(data).sort(([, a], [, b]) => {
     const nameA = Object.values(a)[0]?.store || '';
     const nameB = Object.values(b)[0]?.store || '';
     return nameA.localeCompare(nameB, 'ko');
   }).forEach(([storeKey, submissions]) => {
-    if (!isAll && currentResultStore !== storeKey) return;
-
     const submissionList = Object.values(submissions);
     const storeName = submissionList[0]?.store || storeKey;
 
@@ -2165,20 +2201,20 @@ function renderAdminResult(el, data) {
       totalSkip += sc.filter(s => s.result === 'na').length;
       totalNotDone += sc.filter(s => !s.result || s.result === '미입력').length;
     });
-
     const totalDone = totalPass + totalFail;
     const totalAll = totalPass + totalFail + totalSkip + totalNotDone;
     const passRate = totalDone > 0 ? Math.round(totalPass / totalDone * 100) : 0;
     const rateColor = passRate >= 80 ? '#01a058' : passRate >= 50 ? '#f59e0b' : '#dc2626';
 
-    html += `<div style="margin-bottom:24px;">`;
-
-    // 매장 헤더 카드
     html += `
-    <div style="background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+    <button onclick="drillIntoStore('${storeKey.replace(/'/g, "\\'")}')"
+      style="width:100%;text-align:left;background:#fff;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${storeName}</div>
-        <div style="font-size:12px;color:var(--ink-4);">제출 ${submissionList.length}명</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:12px;color:var(--ink-4);">제출 ${submissionList.length}명</div>
+          <span style="font-size:16px;color:var(--ink-4);">›</span>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="font-size:26px;font-weight:700;color:${rateColor};min-width:52px;">${passRate}%</div>
@@ -2198,14 +2234,7 @@ function renderAdminResult(el, data) {
           </div>
         </div>
       </div>
-    </div>`;
-
-    // 개별 사용자 — 전체 모드: 기본 접힘 / 매장 선택 모드: 기본 펼침
-    submissionList.forEach((d, idx) => {
-      html += buildUserCard(d, idx, !isAll);
-    });
-
-    html += `</div>`;
+    </button>`;
   });
 
   el.innerHTML = html;
@@ -2214,10 +2243,10 @@ function renderAdminResult(el, data) {
 // ── AI 분석 ──
 function renderAdminAI(el, resultData, allSubmissions) {
   const apiKey = localStorage.getItem('claudeApiKey') || '';
-  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const hasKey = !!apiKey && isLocal;
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:';
+  const hasKey = !!apiKey;
 
-  const keySection = hasKey ? `
+  const keySection = isLocal ? `
     <div style="background:#fff;border-radius:12px;border:1px solid var(--line-soft);padding:16px;margin-bottom:12px;">
       <div style="font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:8px;">🔑 Anthropic API Key</div>
       <div style="display:flex;gap:8px;">
@@ -2226,7 +2255,7 @@ function renderAdminAI(el, resultData, allSubmissions) {
       </div>
       <div style="font-size:11px;color:var(--ink-4);margin-top:6px;">키는 이 기기 브라우저에만 저장돼요</div>
     </div>
-    <button onclick="runAIAnalysis()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;">✨ AI 분석 실행</button>` : '';
+    ${hasKey ? `<button onclick="runAIAnalysis()" style="width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;">✨ AI 분석 실행</button>` : ''}` : '';
 
   el.innerHTML = `
   <div style="max-width:640px;margin:0 auto;">
@@ -2518,9 +2547,17 @@ async function runAIAnalysis() {
 }
 
 function renderAdminSurvey(el, allSubmissions) {
-  const withSurvey = allSubmissions.filter(d => d.survey);
+  const filtered = currentSurveyStore
+    ? allSubmissions.filter(d => d.store === currentSurveyStore)
+    : allSubmissions;
+  const headerHtml = currentSurveyStore ? `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button onclick="currentSurveyStore=null;switchAdminTab('result')" style="background:none;border:none;font-size:22px;color:var(--ink-3);cursor:pointer;padding:0;line-height:1;">‹</button>
+      <div style="font-size:15px;font-weight:700;color:var(--ink-1);">${currentSurveyStore}</div>
+    </div>` : '';
+  const withSurvey = filtered.filter(d => d.survey);
   if (!withSurvey.length) {
-    el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 후기가 없어요</div>';
+    el.innerHTML = headerHtml + '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 후기가 없어요</div>';
     return;
   }
 
@@ -2666,8 +2703,9 @@ function renderAdminSurvey(el, allSubmissions) {
 
   let html = `
   <div style="max-width:900px;margin:0 auto;">
+  ${headerHtml}
   <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12);padding:16px 24px;margin-bottom:16px;border-top:8px solid #4285f4;">
-    <div style="font-size:16px;font-weight:500;color:#202124;">사용자 후기 분석</div>
+    <div style="font-size:16px;font-weight:500;color:#202124;">${currentSurveyStore ? currentSurveyStore + ' · 사용자 후기' : '사용자 후기 분석'}</div>
     <div style="font-size:13px;color:#5f6368;margin-top:4px;">총 응답 ${n}명</div>
   </div>`;
 
@@ -2804,6 +2842,11 @@ const SLOTS = [
   { id:'S11', store:'코앤커피',                          location:'에이스하이앤드타워1차 구내식당 옆', type:'카페' },
   { id:'S12', store:'우지커피(구로한신점)',              location:'서울 구로구 디지털로 272 1층 (후문 방향)', type:'카페' },
   { id:'S13', store:'군산아구찜',                        location:'서울 구로구 디지털로 242 한화비즈메트로 1차 B102호 (정문 방향)', type:'식당' },
+  { id:'S14', store:'스시월(구로점)',                    location:'서울특별시 구로구 디지털로26길 90 1층 후문 방향', type:'식당' },
+  { id:'S15', store:'이치돈부리(구로디지털점)',          location:'서울특별시 구로구 디지털로26길 111 1층', type:'식당' },
+  { id:'S16', store:'명품임실치즈피자',                  location:'가산초등학교 건너편', type:'식당' },
+  { id:'S17', store:'명동 할머니국수',                   location:'후문 방향 사거리 코오롱싸이언스밸리2차 지하1층', type:'식당' },
+  { id:'S18', store:'커피마마퀸',                        location:'정문 방향 한화비즈메트로 1차 1층', type:'카페' },
 ];
 
 let selectedSlotId = null;
@@ -2825,7 +2868,7 @@ function initSignup() {
       </div>`;
     listEl.appendChild(section);
 
-    SLOTS.filter(s => s.type === type).forEach((slot, idx) => {
+    SLOTS.filter(s => s.type === type && !STORES.find(st => st.name === s.store)?.hidden).forEach((slot, idx) => {
       const wrap = document.createElement('div');
       wrap.id = `slot-wrap-${slot.id}`;
       wrap.style.cssText = 'position:relative;';
@@ -2835,9 +2878,10 @@ function initSignup() {
       btn.id = `slot-btn-${slot.id}`;
       const sameStoreSlots = SLOTS.filter(s=>s.store===slot.store);
       const teamLabel = sameStoreSlots.length > 1 ? ` ${sameStoreSlots.indexOf(slot)+1}팀` : '';
+      const storeInfo = STORES.find(s => s.name === slot.store);
       btn.innerHTML = `
         <div class="slot-btn-content">
-          <div class="slot-btn-name">${slot.store}${teamLabel}</div>
+          <div class="slot-btn-name">${slot.store}${teamLabel}${storeInfo?.sikwon ? ' <span class="store-tag tag-sikwon" style="font-size:10px;padding:2px 7px;vertical-align:middle;">식권</span>' : ''}</div>
           <div class="slot-btn-location">📍 ${slot.location}</div>
           <div class="slot-btn-meta">
             <span class="slot-count" id="slot-count-${slot.id}">0명 신청</span>
