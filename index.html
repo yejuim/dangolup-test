@@ -1963,10 +1963,9 @@ function adminRefresh() {
     const dates = Object.keys(allData).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
     renderAdminDateBar(dates);
 
-    // 날짜 필터링
+    // 날짜 필터링 (result·survey 탭용)
     let filteredData = {};
     if (currentAdminDate === '__all__') {
-      // 전체: 모든 날짜 병합 (같은 storeKey면 submissions 합치기)
       dates.forEach(date => {
         Object.entries(allData[date] || {}).forEach(([storeKey, subs]) => {
           if (!filteredData[storeKey]) filteredData[storeKey] = {};
@@ -1985,7 +1984,22 @@ function adminRefresh() {
     });
     _adminAllSubmissions = allSubmissions;
 
-    if (!allSubmissions.length) {
+    // AI 탭용: 날짜 무관 전체 데이터 병합
+    const allDataMerged = {};
+    dates.forEach(date => {
+      Object.entries(allData[date] || {}).forEach(([storeKey, subs]) => {
+        if (!allDataMerged[storeKey]) allDataMerged[storeKey] = {};
+        Object.entries(subs).forEach(([k, v]) => {
+          allDataMerged[storeKey][`${date}_${k}`] = v;
+        });
+      });
+    });
+    const allSubmissionsTotal = [];
+    Object.values(allDataMerged).forEach(subs => {
+      Object.values(subs).forEach(d => allSubmissionsTotal.push(d));
+    });
+
+    if (!allSubmissions.length && currentAdminTab !== 'ai') {
       el.innerHTML = '<div style="text-align:center;color:var(--ink-4);padding:40px 0;">아직 제출된 결과가 없어요</div>';
       return;
     }
@@ -1995,7 +2009,7 @@ function adminRefresh() {
     } else if (currentAdminTab === 'survey') {
       renderAdminSurvey(el, allSubmissions);
     } else if (currentAdminTab === 'ai') {
-      renderAdminAI(el, filteredData, allSubmissions);
+      renderAdminAI(el, allDataMerged, allSubmissionsTotal);
     }
   }, err => {
     el.innerHTML = `<div style="text-align:center;color:#dc2626;padding:40px 16px;font-size:13px;">Firebase 읽기 실패: ${err.message}<br><br><button onclick="adminRefresh()" style="padding:8px 20px;background:#191919;color:#fff;border:none;border-radius:20px;font-size:13px;cursor:pointer;">다시 시도</button></div>`;
@@ -2341,20 +2355,29 @@ function buildAnalysisPrompt(resultData, allSubmissions) {
   const withSurvey = allSubmissions.filter(d => d.survey);
   const n = withSurvey.length;
 
+  // 시나리오 ID → 이름 맵 (모든 가맹점 시나리오 풀)
+  const scenarioNameMap = {};
+  try {
+    buildScenarios(null, true).forEach(s => { scenarioNameMap[s.id] = `${s.cat} > ${s.name}`; });
+  } catch(e) {}
+
   // 시나리오 통과율 집계
   const scenarioStats = {};
   allSubmissions.forEach(d => {
     Object.entries(d.scenarios || {}).forEach(([id, s]) => {
-      if (!scenarioStats[id]) scenarioStats[id] = { pass:0, fail:0, na:0 };
+      if (!scenarioStats[id]) scenarioStats[id] = { pass:0, fail:0, na:0, notes:[] };
       if (s.result === 'pass') scenarioStats[id].pass++;
       else if (s.result === 'fail') scenarioStats[id].fail++;
       else if (s.result === 'na') scenarioStats[id].na++;
+      if (s.note) scenarioStats[id].notes.push(s.note);
     });
   });
   const scenarioSummary = Object.entries(scenarioStats).map(([id, s]) => {
     const done = s.pass + s.fail;
     const rate = done > 0 ? Math.round(s.pass/done*100) : null;
-    return `${id}: ${rate !== null ? rate+'% 통과' : '미입력'} (Pass ${s.pass} / Fail ${s.fail}${s.na ? ` / 제외 ${s.na}` : ''})`;
+    const name = scenarioNameMap[id] || id;
+    const notePart = s.notes.length ? ` / 메모: ${s.notes.join(', ')}` : '';
+    return `[${name}] ${rate !== null ? rate+'% 통과' : '미입력'} (통과 ${s.pass}건 / 실패 ${s.fail}건${s.na ? ` / 제외 ${s.na}건` : ''}${notePart})`;
   }).join('\n');
 
   // 설문 집계
@@ -2388,56 +2411,103 @@ function buildAnalysisPrompt(resultData, allSubmissions) {
   const npsScore = npsVals.length ? Math.round((npsPromoter-npsDetractor)/npsVals.length*100) : 'N/A';
 
   return `당신은 서비스 기획자를 위한 현장 테스트 데이터 분석가입니다.
-아래는 단골UP(PAYCO 기반 오피스 상권 픽업·현장취식 O2O 멤버십 서비스)의 사내 현장 테스트 결과입니다.
+아래는 단골UP의 사내 현장 테스트 결과입니다.
 총 제출 ${allSubmissions.length}건, 사용자 후기 ${n}건 기반입니다.
 
-[서비스 개요]
-- 오피스 상권 근처 식당·카페 대상 단골 멤버십 서비스
-- PAYCO 앱: 자동 적립, 직접 쿠폰 사용, 사전 픽업 주문
-- 현장 멤버십 웹: 수기 적립 요청, 사장님 쿠폰 확인, 앱 미설치자 대상
-- 쿠폰 구조: 사용하면 새 쿠폰 재발급 (무한 반복)
-- 내부 논쟁: 앱 중심 전략 vs 웹 완결성 전략
+[서비스 현황]
+- 단골UP은 이미 출시된 서비스이며, 현재 리얼 테스트 진행 중 (런칭 인사이트 불필요, 운영 개선 인사이트 필요)
+- 수익 모델: 가맹점 구독료 (수수료 없음). 현재 테스트 기간 중 가맹점에 무료 제공 → 구독료 유효성은 테스트로 검증 불가
+- PAYCO 기반 O2O 멤버십: 소상공인 식당·카페 대상
+- PAYCO 앱: 자동 적립, 픽업·배달 주문, 쿠폰 사용
+- 현장 멤버십 웹: PAYCO 미설치 사용자 대상 — QR 또는 링크로 접속, 수기 적립 요청, 쿠폰 확인
+- 쿠폰 구조: 사용 즉시 새 쿠폰 자동 재발급 (무한 반복)
+- POS: 이미 운영 중. PAYCO 앱에서 결제 완료된 주문이 가맹점 POS로 인입되는 구조 (도입 예정이 아님)
+- 배달 기능: 이미 서비스 내 존재하나 현재 배달을 사용하는 활성 가맹점 없음 → 배달 기능 추가 권고 불필요, 배달 활성화 전략 관점으로 분석
+- 태블릿 기기 관련 전략은 검토하지 않으므로 분석에서 제외
+
+[현재 운영 중인 플랫폼 현황 — 전략적 판단 필요]
+현재 4개 플랫폼을 동시 운영 중이나, 모두 기능이 온전히 구현된 상태가 아닌 반토막 상태임:
+① V오더 (테이블 오더): 현장 취식 주문 기능, 부분 구현
+② 현장 멤버십 웹: 비회원·PAYCO 미설치 사용자 대상 QR 접속, 수기 적립·쿠폰 확인, 부분 구현
+③ PAYCO 앱: 자동 적립·픽업·배달 주문·쿠폰, 핵심 채널이나 기능 고도화 여지 있음
+④ 어드민: 가맹점 및 데이터 관리, 부분 구현
+→ 관리 포인트가 4개로 분산된 상태에서 신규 기능을 계속 추가하면 각 플랫폼의 완성도가 더 떨어질 수 있음
+→ 핵심 질문: 지금 신규 기능을 계속 추가하는 게 맞는가, 아니면 기존 플랫폼 중 일부를 먼저 고도화해 완성도를 높이는 게 맞는가
+
+[상권 전략 현황]
+- 기존 베이스: 구로구 오피스 상권 (식권 가맹점 중심, 평일 점심 집중, 저녁·주말 주문 5% 미만, CRM 활성화 어려움, 공휴일 매출 40% 감소)
+- 현재 영업 확대 방향: 관악구(1인가구 62.2% 서울 1위) + 금천구(1인가구 51.7% 서울 4위) — 주거+상업 혼합 상권으로 확장 중
+- 오피스 상권 '정착'이 목표가 아니라, 오피스 한계를 인지하고 주거 혼합 상권으로 전환하는 것이 현재 전략임
+- 관악·금천은 '미래 확장'이 아니라 현재 진행 중인 영업 타겟임
+- 영업 방식: 배민·쿠팡 이미 사용하는 가맹점이 단골UP 제안에 호의적이라는 현장 발견 → 배달앱 '주문 많은 순' 상위 가맹점을 실명 타겟으로 영업
+
+[QR 전략 일관성 — 반드시 하나의 방향으로 결론]
+- 현장 멤버십 웹 QR: PAYCO 미설치 사용자가 매장 QR을 스캔해 웹으로 진입하는 현재 기능. 이것은 이미 운영 중
+- QR 오더(웹 기반 QR 주문): 별도 기능으로, 도입 여부가 불확실한 항목
+- 두 섹션(QR 오더 방향 / PAYCO 강점·약점)에서 서로 다른 QR 결론을 내리지 말 것. 현장 멤버십 웹 QR(기존)과 QR 오더(신규)를 명확히 구분하고, QR 오더에 대해서는 데이터 근거로 단일 결론을 유지할 것
 
 [경쟁 구도]
-경쟁사를 영역별로 구분하면:
-
 앱 주문(픽업·배달) 경쟁:
-- 배민: 배달 압도적 1위, 픽업 있음. 수수료 높고 오프라인 멤버십 없음. 대형 브랜드 중심
-- 쿠팡이츠: 배달·픽업, 로켓 연계 혜택. 오프라인 멤버십 없음
+- 배민: 배달 1위, 높은 수수료, 오프라인 멤버십 없음
+- 쿠팡이츠: 배달·픽업, 오프라인 멤버십 없음
 
-QR 기반 경쟁:
-- 카카오 춘식이 QR: QR 스탬프 적립, 카카오톡 채널 연동 재방문 알림 강점. 쿠폰/주문 없음
-- 토스플레이스: QR 결제·적립, POS 연동. 소상공인 친화적이고 현장에서 이미 도입률 높음
-- 네이버 스마트플레이스: QR 주문·예약·멤버십. 트래픽 압도적
+QR·현장 기반 경쟁:
+- 카카오 춘식이 QR: QR 스탬프 적립, 카카오톡 채널 연동. 쿠폰/주문 없음
+- 토스플레이스: QR 결제·적립, POS 연동, 현장 결제·적립·쿠폰 통합. 소상공인 도입률 이미 높음. 단골UP과 전 영역 경쟁
+- 네이버 스마트플레이스: QR 주문·예약·멤버십, 압도적 트래픽
 
 멤버십·적립 경쟁:
-- 도도포인트: POS 연동 스탬프·포인트, 가맹점 수 많음. 소비자 앱 없어 사용자 주도성 낮음
-- 네이버 스마트플레이스: 영수증 리뷰 기반 멤버십. 단골 개념 약함
-- 토스플레이스: 결제 연동 자동 적립, 소상공인 정산까지 한번에
+- 도도포인트: POS 연동 스탬프·포인트. 소비자 앱 없어 사용자 주도성 낮음
+- 토스플레이스: 결제 연동 자동 적립
 
-현장 웹 + 수기적립 경쟁:
-- 토스플레이스: POS 에이전트 프로그램으로 현장 결제·적립·쿠폰 통합. 단골UP과 가장 직접 겹치는 영역
-
-핵심: 토스플레이스는 앱주문 제외 전 영역(QR·멤버십·현장웹·수기적립·POS연동)을 커버하는 가장 강력한 경쟁자. 단골UP도 POS 에이전트 프로그램 도입 예정으로 정면 충돌 예상
-단골UP 포지션: PAYCO 결제 자동 적립 + 픽업 주문 + 무한재발급 쿠폰 + 오피스 상권 특화.
+핵심: 토스플레이스는 단골UP과 가장 직접적으로 겹치는 경쟁자. 단골UP은 이미 POS 운영 중으로 직접 충돌 중.
+단골UP 차별점: PAYCO 결제 자동 적립(경쟁사 대부분 수동) + 무한재발급 쿠폰 + 수수료 없는 구독료 모델 + 배달앱 가맹점 수용성
 
 [내부 논쟁: PAYCO 기반이 강점인가 약점인가]
-강점 주장: PAYCO 결제 연동으로 자동 적립 가능(경쟁사 대부분 수동), NHN 인프라·결제 신뢰도, 기존 PAYCO 유저 기반 활용 가능
-약점 주장: PAYCO 앱 설치라는 추가 진입장벽, PAYCO 자체 인지도·사용률이 카카오페이·토스·네이버페이 대비 낮음, PAYCO를 모르는 가맹점주에게 설명 비용 발생
-중립 주장: 오피스 상권 직장인은 PAYCO 인지율이 일반 대비 높을 수 있음(법인카드·복지포인트 연동), 하지만 MZ세대 중심으론 토스·카카오가 기본값
-이 논쟁을 테스트 데이터(앱설치장벽 응답, 기능차이 인지 여부, 앱감수 이유)로 분석해 결론을 내려야 함
+강점 주장: PAYCO 결제 연동 자동 적립(경쟁사 대부분 수동), NHN 인프라·결제 신뢰도, 기존 PAYCO 유저 활용 가능
+약점 주장: PAYCO 앱 설치 진입장벽, 카카오페이·토스·네이버페이 대비 낮은 인지도
+중립: 오피스·직장인 대상으로는 PAYCO 인지율 상대적으로 높을 수 있음(법인카드·복지포인트 연동)
+이 논쟁을 앱 설치 진입장벽 응답·기능 차이 인지 여부·앱 감수 이유 데이터로 판정할 것
 
 [시나리오 통과율]
 ${scenarioSummary}
 
-[사용자 후기 n=${n}]
-앱/웹 전략: 앱설치장벽=${dist('barrier')} | 웹완결성=${dist('web_enough')} | 소개방식=${dist('intro')} | 앱감수이유=${dist('app_worth')} | 기능차이인지=${dist('channel')}
-쿠폰: 사용여부=${dist('q10')} | 난이도=${avg('q11')} | 매력도=${avg('coupon_appeal')} | 재방문동인=${dist('coupon_revisit')} | 재발급인지=${dist('coupon_reissue')}
-서비스가치: 앱직관성=${avg('q3')} | 멤버십재방문=${avg('revisit')} | 오프피크=${avg('offpeak')} | 만족도=${avg('q12')}
-NPS: 평균=${npsAvg}/5 | 스코어=${npsScore} | 추천${npsPromoter}명/비추${npsDetractor}명
-확장: 이유=${dist('expand_why')} | 업종=${multiDist('expand')}
-QR오더: 웹주문의향=${dist('qr_web')} | 앱설치의향=${dist('qr_app')}
-자유의견: ${notes.length ? notes.join(' / ') : '없음'}
+[사용자 후기 설문 결과 — 총 ${n}명 응답]
+
+■ 앱 vs 웹 전략 판단
+- 일반 고객의 앱 설치 진입장벽 예상: ${dist('barrier')}
+- 앱 없이 웹만으로 충분한가: ${dist('web_enough')}
+- 지인에게 단골UP 소개한다면 어떻게 할 것인가: ${dist('intro')}
+- 앱 설치를 감수할 만한 이유: ${dist('app_worth')}
+- 앱과 웹의 기능 차이를 인지하는가: ${dist('channel')}
+
+■ 쿠폰 경험
+- 쿠폰 사용 여부: ${dist('q10')}
+- 쿠폰 사용 난이도 평균 (1=어려움, 5=쉬움): ${avg('q11')}
+- 쿠폰 매력도 평균 (1=낮음, 5=높음): ${avg('coupon_appeal')}
+- 쿠폰이 재방문에 영향을 미치는가: ${dist('coupon_revisit')}
+- 쿠폰 자동 재발급 구조를 인지하는가: ${dist('coupon_reissue')}
+
+■ 서비스 가치 평가
+- PAYCO 앱 주문 직관성 평균 (1=불편, 5=편리): ${avg('q3')}
+- 멤버십이 재방문에 영향을 미치는가 평균 (1=아님, 5=그렇다): ${avg('revisit')}
+- 저녁·주말 등 비피크 이용 의향 평균 (1=없음, 5=있음): ${avg('offpeak')}
+- 전반적 서비스 만족도 평균 (1=불만족, 5=만족): ${avg('q12')}
+
+■ NPS (추천 의향, 0~5점)
+- 평균 점수: ${npsAvg}/5 | NPS 스코어: ${npsScore}
+- 추천(4~5점): ${npsPromoter}명 / 비추(0~2점): ${npsDetractor}명
+
+■ 서비스 확장 의견
+- 확장을 원하는 이유: ${dist('expand_why')}
+- 확장 희망 업종: ${multiDist('expand')}
+
+■ QR 기반 주문 의향
+- 웹 QR로 주문 의향: ${dist('qr_web')}
+- 웹 QR 주문 시 앱 설치 의향: ${dist('qr_app')}
+
+■ 자유 의견 (개선 요청·추가 기능 제안)
+${notes.length ? notes.map((t,i)=>`${i+1}. ${t}`).join('\n') : '없음'}
 
 ---
 
@@ -2457,22 +2527,30 @@ QR오더: 웹주문의향=${dist('qr_web')} | 앱설치의향=${dist('qr_app')}
   ]
 }
 
-섹션은 반드시 이 9개 순서대로:
-1. 서비스 기본 완성도 — 시나리오 통과율 기반으로 안정적인 기능과 취약한 기능 구분
-2. 쿠폰 전략 유효성 — 쿠폰이 실제 재방문 동인이 되는지, 무한재발급 구조가 사용자에게 인지되는지
-3. 앱 vs 웹 전략 — 진입장벽·웹완결성·소개방식 데이터 종합해 어느 방향이 더 유효한지 판단
-4. QR 오더 방향 — 웹 QR/앱 QR/둘 다 중 어떤 방향이 맞는지. 픽업+현장취식 UX 어색함도 고려
-5. 오피스 상권 정착 전략 (icon: 🏢) — 단순 적합성 판단이 아닌, 오피스 상권에서 실제로 정착하려면 무엇이 필요한지. 점심 피크 의존도 탈피 방법, 단골 형성 조건, 가맹점 온보딩 전략 포함
-6. 주거 상권 확장 시나리오 (icon: 🏘️) — 주거 상권으로 확장 시 오피스와 달라지는 사용 패턴, 필요한 기능 변화, 쿠폰/멤버십 전략 차이, 준비해야 할 것들. 현재 데이터에서 신호가 없으면 O2O 서비스 패턴 기반으로 추정 명시
-7. 멤버십+픽업·배달 런칭 인사이트 (icon: 🚀) — 제대로 된 서비스로 런칭하려면 갖춰야 할 것들. UX 완성도, 가맹점 운영 준비도, 사용자 온보딩 흐름, 쿠폰/적립 구조, 배달 추가 시 고려사항 포함
-8. 즉시 개선 과제 — 자유의견+실패 시나리오+낮은 점수 기반으로 지금 당장 고칠 것 vs 다음 스프린트 구분
-9. PAYCO 기반 강점 vs 약점 판정 (icon: 💳) — 내부에서 의견이 분분한 "PAYCO 기반이 강점인가 약점인가"를 테스트 데이터로 판정. 앱설치 장벽 응답·기능차이 인지·앱 감수 이유 데이터를 근거로 강점/약점/조건부 중 하나로 명확히 결론. 오피스 상권 직장인 맥락에서의 PAYCO 포지션도 분석
-10. 경쟁사 대비 차별화 전략 (icon: ⚔️) — 영역별 경쟁자(앱주문: 배민·쿠팡이츠 / QR: 카카오·네이버·토스플레이스 / 멤버십: 도도포인트·네이버·토스플레이스 / 현장웹수기적립: 토스플레이스) 각각 대비 이기는 포인트와 지는 포인트 명확히 구분. 특히 토스플레이스는 전 영역 경쟁자이자 POS 에이전트까지 겹치므로 가장 비중 있게 분석. 단골UP이 집중해야 할 핵심 차별화 포인트 도출
-11. 놓치고 있는 리스크 (icon: ⚠️) — 현재 전략의 맹점, 사용자가 말하지 않은 것, 장기 위험 요인. 데이터 근거 없으면 추정 명시
+섹션은 반드시 이 11개 순서대로:
+1. 서비스 기본 완성도 — 시나리오 통과율 기반으로 안정적인 기능과 취약한 기능 구분. 실패 건의 공통 패턴도 분석
+2. 쿠폰 전략 유효성 — 쿠폰이 실제 재방문 동인이 되는지, 무한재발급 구조를 사용자가 인지하는지, 매력도 점수 해석
+3. 앱 vs 웹 — 단일 플랫폼 vs 이중 플랫폼 판단 — 핵심 논쟁: PAYCO 앱 미설치 사용자를 위해 별도 웹 플랫폼을 계속 운영·고도화하는 것이 맞는가, 아니면 앱 중심으로 수렴해 플랫폼 관리 비용을 줄이는 것이 맞는가. 진입장벽·웹완결성·소개방식 데이터로 웹의 실제 필요성을 판단하고, 웹을 유지할 경우 어느 수준까지 기능을 넣어야 하는지 기준도 제시. 단일 결론 필수
+4. 웹 QR 현장 주문 vs 테이블 오더(앱) 선택 (icon: 📱) — 현장에서 주문을 받는 방식으로 두 가지 방향이 논쟁 중: ① 웹 QR 현장 주문(비회원·앱 미설치 사용자가 QR 스캔 후 웹에서 주문) vs ② 테이블 오더(PAYCO 앱 설치 사용자가 앱으로 현장 취식 주문). 현재 멤버십 웹 QR(적립·쿠폰 확인용)은 이미 운영 중이며 이것과 별개로 '주문 기능'을 어느 채널에 붙일지가 이슈. 앱 설치 장벽 데이터·웹 완결성 응답·오피스 특화 전략 방향(11번)을 종합해 어느 방향이 현실적인지 단일 결론. 이 결론은 3번·9번과 일관성 유지
+5. 구로 오피스 vs 관악·금천 혼합 상권 비교 (icon: 🏙️) — 구로 오피스 상권은 이미 한계가 확인된 상태. 테스트 데이터에서 오피스 패턴(점심 집중·CRM 저조)과 주거 혼합 패턴(저녁·주말 의향·재방문 동인)의 차이가 보이는지 분석. 관악·금천 타겟 영업을 뒷받침하거나 반박하는 신호 도출
+6. 배달앱 가맹점 타겟 영업 전략 검증 (icon: 🎯) — '배달앱 사용 가맹점이 단골UP에 호의적'이라는 현장 가설을 테스트 데이터로 검증. 디지털 친화도·수수료 피로·CRM 경험 관련 응답에서 신호를 찾을 것. 배달 기능은 이미 있으나 활성 가맹점이 없으므로, 배달 채널을 영업 레버리지로 활용하는 방법 분석
+7. 가맹점 온보딩 및 초기 레퍼런스 확보 전략 (icon: 🚀) — 이미 출시된 서비스에서 초기 성공 사례를 어떻게 만들 것인가. 테스트 기간 무료 구독 이후 유료 전환 설득 포인트, 가맹점주 설득 멘트의 효과, 온보딩 마찰 최소화 방향
+8. 개발 우선순위 판단 — 신규 기능 추가 vs 기존 고도화 (icon: 🔧) — 현재 4개 플랫폼(V오더·현장멤버십웹·PAYCO앱·어드민)이 모두 반토막 상태로 운영 중. 테스트 데이터(실패 시나리오·낮은 만족도·자유의견)를 근거로: ① 각 플랫폼별로 현재 완성도가 실사용에 충분한지 판단, ② 신규 기능을 추가하기 전에 먼저 고도화가 필요한 플랫폼/기능이 무엇인지, ③ 반대로 지금 당장 고도화보다 신규 기능 추가가 더 중요한 영역이 있는지 구분. 플랫폼 수를 줄이거나 통합하는 방향이 데이터상 유효한지도 판단. 지금 당장 고칠 것 vs 다음 스프린트 vs 보류 3단계로 정리
+9. PAYCO 기반 강점 vs 약점 판정 (icon: 💳) — 앱 설치 진입장벽·기능 차이 인지·앱 감수 이유 데이터로 강점/약점/조건부 중 하나로 명확히 결론. 오피스+직장인 맥락에서의 PAYCO 포지션 분석. 4번 QR 오더 결론과 방향이 일치해야 함 (모순 금지)
+10. 경쟁사 대비 차별화 전략 (icon: ⚔️) — 배민·쿠팡이츠(앱주문) / 카카오·네이버·토스플레이스(QR·현장) / 도도포인트(멤버십) 각각 대비 이기는 포인트와 지는 포인트 구분. 토스플레이스는 POS까지 포함해 전 영역 경쟁 중이므로 가장 비중 있게 분석. 단골UP 구독료 모델(무수수료)이 실제 차별점이 되는지도 판단
+11. 오피스 특화 앱 전략 타당성 검토 (icon: 🏢) — 배민·쿠팡이라는 강력한 일반 배달 경쟁자가 이미 존재하는 상황에서, '범용 O2O 멤버십' 대신 '오피스 상권 특화 앱'으로 포지셔닝을 좁히는 전략의 타당성을 분석. 구체적으로: 식권 가맹점 위주 영업 → 오피스 직장인 대상 시간 예약 후 현장 취식(테이블 오더), 픽업, 회사로 배달(오피스 배달) 기능 중심으로 재편하는 방향. 이 전략이 현재 단골UP 구조(PAYCO·멤버십·쿠폰)와 맞는지, 테스트 데이터에서 오피스 특화 수요 신호가 있는지, 배민·쿠팡과 정면 충돌을 피하면서 차별화할 수 있는지, 반대로 이 방향의 한계와 리스크는 무엇인지 균형 있게 판단. 데이터 근거가 부족하면 오피스 O2O 서비스 패턴 기반 추정임을 명시
+12. 놓치고 있는 리스크 (icon: ⚠️) — 현재 전략의 맹점, 사용자가 말하지 않은 것, 장기 위험 요인. 데이터 근거 없으면 추정임을 명시
 
-5·6·7·9번은 데이터 검증을 넘어 전략 방향 제시가 목적. 구체적 액션과 우선순위까지 포함할 것.
+5·6·7·9·10번은 데이터 검증을 넘어 전략 방향 제시가 목적. 구체적 액션과 우선순위까지 포함할 것.
+4번과 9번은 QR 방향에 대해 반드시 동일한 결론을 내릴 것 — 모순된 결론 절대 금지.
 status는 데이터 기반으로 판단: good(긍정적), warning(주의), danger(즉시 대응 필요)
-points는 반드시 수치 근거 또는 구체적 조건 포함. "중요합니다" 같은 추상 표현 금지.`;
+points는 반드시 수치 근거 또는 구체적 조건 포함. "중요합니다" 같은 추상 표현 금지.
+
+[출력 언어 규칙 — 반드시 준수]
+- P1, D2, O3 같은 시나리오 ID를 출력에 절대 사용하지 말 것. 반드시 기능 이름으로 풀어 쓸 것. (예: "픽업 주문 흐름", "PAYCO 결제", "단골 맺기" 등)
+- 내부 변수명·키값(q3, nps, barrier, coupon_appeal 등)을 출력에 절대 노출하지 말 것.
+- 모든 문장은 이 보고서를 처음 보는 팀원도 맥락 없이 이해할 수 있는 수준으로 작성할 것.
+- 수치를 인용할 때는 "앱 직관성 평균 4.2점", "쿠폰 사용자 중 재방문 동인 응답 3명" 처럼 무엇에 대한 수치인지 명확히 쓸 것.`;
 }
 
 async function runAIAnalysis() {
@@ -2582,7 +2660,12 @@ function renderAdminSurvey(el, allSubmissions) {
   // 선택형 카드 (구글폼 스타일 가로 바)
   function npsCard() {
     const vals = surveys.map(s=>s.nps).filter(v=>v!==''&&v!==undefined&&v!==null).map(Number);
-    if (!vals.length) return '';
+    if (!vals.length) return `
+    <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px 24px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#5f6368;margin-bottom:4px;">Q18</div>
+      <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:12px;">NPS (추천 의향)</div>
+      <div style="font-size:13px;color:#9aa0a6;">응답 없음</div>
+    </div>`;
     const avgVal = (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1);
     const promoter = vals.filter(v=>v>=4).length;
     const passive = vals.filter(v=>v===3).length;
@@ -2626,36 +2709,37 @@ function renderAdminSurvey(el, allSubmissions) {
 
   function choiceCard(label, fn, qNum) {
     const dist = countDist(fn);
-    if (!dist.length) return '';
     const responded = dist.reduce((a,[,c]) => a+c, 0);
-    const maxCount = dist[0][1];
+    const maxCount = dist.length ? dist[0][1] : 1;
     const colors = ['#4285f4','#ea4335','#fbbc04','#34a853','#9c27b0','#ff6d00'];
+    const bodyHtml = dist.length
+      ? dist.map(([v, c], i) => {
+          const pct = Math.round(c / responded * 100);
+          const barW = Math.round(c / maxCount * 100);
+          return `<div style="margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:${colors[i%colors.length]};flex-shrink:0;"></div>
+              <div style="font-size:13px;color:#202124;flex:1;">${v}</div>
+              <div style="font-size:13px;color:#5f6368;white-space:nowrap;">${c}명 (${pct}%)</div>
+            </div>
+            <div style="margin-left:20px;background:#f1f3f4;border-radius:3px;height:8px;overflow:hidden;">
+              <div style="background:${colors[i%colors.length]};height:100%;width:${barW}%;border-radius:3px;transition:width 0.3s;"></div>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div style="font-size:13px;color:#9aa0a6;padding:8px 0;">응답 없음</div>`;
     return `
     <div style="background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.08);padding:20px 24px;margin-bottom:16px;">
       <div style="font-size:11px;color:#5f6368;margin-bottom:4px;">${qNum}</div>
       <div style="font-size:15px;font-weight:500;color:#202124;margin-bottom:16px;">${label}</div>
       <div style="font-size:12px;color:#5f6368;margin-bottom:12px;">${responded}명 응답</div>
-      ${dist.map(([v, c], i) => {
-        const pct = Math.round(c / responded * 100);
-        const barW = Math.round(c / maxCount * 100);
-        return `<div style="margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-            <div style="width:10px;height:10px;border-radius:50%;background:${colors[i%colors.length]};flex-shrink:0;"></div>
-            <div style="font-size:13px;color:#202124;flex:1;">${v}</div>
-            <div style="font-size:13px;color:#5f6368;white-space:nowrap;">${c}명 (${pct}%)</div>
-          </div>
-          <div style="margin-left:20px;background:#f1f3f4;border-radius:3px;height:8px;overflow:hidden;">
-            <div style="background:${colors[i%colors.length]};height:100%;width:${barW}%;border-radius:3px;transition:width 0.3s;"></div>
-          </div>
-        </div>`;
-      }).join('')}
+      ${bodyHtml}
     </div>`;
   }
 
   // 점수형 카드 (1~5 분포 + 평균)
   function scaleCard(label, fn, qNum, minLabel, maxLabel) {
     const a = avg(fn);
-    if (!a) return '';
     const dist = [1,2,3,4,5].map(i => {
       const c = surveys.filter(s => Number(fn(s)) === i).length;
       return [i, c];
@@ -2679,11 +2763,13 @@ function renderAdminSurvey(el, allSubmissions) {
       <div style="display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-bottom:12px;">
         <span>${minLabel||''}</span><span>${maxLabel||''}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid #f1f3f4;">
+      ${a
+        ? `<div style="display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid #f1f3f4;">
         <span style="font-size:12px;color:#5f6368;">평균</span>
         <span style="font-size:22px;font-weight:700;color:#4285f4;">${a}</span>
         <span style="font-size:12px;color:#9aa0a6;">/ 5</span>
-      </div>
+      </div>`
+        : `<div style="font-size:13px;color:#9aa0a6;padding-top:12px;border-top:1px solid #f1f3f4;">응답 없음</div>`}
     </div>`;
   }
 
