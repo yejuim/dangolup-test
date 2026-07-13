@@ -220,6 +220,7 @@
   }
   .review-fab:active { transform: scale(0.96); }
   .review-fab.hidden { display: none; }
+  .tabbar.hidden { display: none; }
 
   /* ── 후기 작성 ── */
   .review-header {
@@ -283,7 +284,7 @@
     <h1>오늘 점심,<br>단골UP으로 주문해보세요</h1>
   </div>
 
-  <div class="tabbar">
+  <div class="tabbar" id="tabbar">
     <button class="tab-btn active" data-tab="list" onclick="switchTab('list')">매장 목록</button>
     <button class="tab-btn" data-tab="howto" onclick="switchTab('howto')">사용 방법</button>
   </div>
@@ -745,11 +746,13 @@
     document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-review').classList.add('active');
     document.getElementById('reviewFab').classList.add('hidden');
+    document.getElementById('tabbar').classList.add('hidden');
     window.scrollTo(0, 0);
   }
   function closeReviewPanel() {
     switchTab(lastTab);
     document.getElementById('reviewFab').classList.remove('hidden');
+    document.getElementById('tabbar').classList.remove('hidden');
   }
 
   function selectScale(group, val) {
