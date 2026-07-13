@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>단골UP 점심 방문 가이드</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <style>
   :root {
     --nhn-black: #191919;
@@ -179,6 +181,11 @@
     padding: 1px 7px; border-radius: var(--r-pill); margin-left: 5px;
     white-space: nowrap;
   }
+  .store-usage {
+    font-size: 11px; font-weight: 600; margin-top: 4px; letter-spacing: -0.01em;
+  }
+  .store-usage.limited { color: var(--amber); }
+  .store-usage.full { color: var(--caption); font-weight: 500; }
 
   .store-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 
@@ -200,6 +207,71 @@
     border-radius: var(--r-pill); white-space: nowrap; letter-spacing: -0.01em;
     background: var(--canvas); border: 1px solid var(--line-soft); color: var(--meta);
   }
+
+  /* ── 후기 남기기 FAB ── */
+  .review-fab {
+    position: fixed; right: 18px; bottom: 22px; z-index: 50;
+    display: flex; align-items: center; gap: 6px;
+    padding: 13px 20px; border-radius: var(--r-pill);
+    background: var(--nhn-blue); color: #fff; font-size: 13.5px; font-weight: 700;
+    border: none; cursor: pointer; letter-spacing: -0.01em;
+    box-shadow: 0 4px 16px rgba(15,128,246,0.35), 0 2px 8px rgba(0,0,0,0.18);
+    transition: transform 120ms;
+  }
+  .review-fab:active { transform: scale(0.96); }
+  .review-fab.hidden { display: none; }
+
+  /* ── 후기 작성 ── */
+  .review-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 18px 4px; position: sticky; top: 0; background: var(--canvas); z-index: 5;
+  }
+  .review-back-btn {
+    background: none; border: none; font-size: 24px; color: var(--text);
+    cursor: pointer; padding: 0 4px 0 0; line-height: 1; flex-shrink: 0;
+  }
+  .review-header-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+  .review-body { padding: 18px 18px 32px; display: flex; flex-direction: column; gap: 22px; }
+  .review-field-label {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    letter-spacing: -0.02em; margin-bottom: 10px; line-height: 1.5;
+  }
+  .check-group, .radio-group { display: flex; flex-direction: column; gap: 6px; }
+  .check-opt, .radio-opt {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+    border: 1px solid var(--line); border-radius: var(--r-card);
+    background: var(--canvas-2); color: var(--meta); cursor: pointer;
+    font-size: 13.5px; letter-spacing: -0.01em; transition: border-color 120ms;
+  }
+  .check-opt:hover, .radio-opt:hover { border-color: var(--nhn-blue); }
+  .check-opt input, .radio-opt input { width: 17px; height: 17px; accent-color: var(--nhn-blue); flex-shrink: 0; }
+  .scale-row { display: flex; gap: 6px; }
+  .scale-btn {
+    flex: 1; padding: 11px 4px; border: 1.5px solid var(--line); border-radius: 10px;
+    text-align: center; font-weight: 700; font-size: 14px; cursor: pointer;
+    background: var(--canvas-2); color: var(--meta); transition: all 120ms;
+  }
+  .scale-btn.selected { background: var(--nhn-blue); color: #fff; border-color: var(--nhn-blue); }
+  .scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--caption); margin-top: 6px; }
+  .review-textarea {
+    width: 100%; min-height: 110px; border: 1.5px solid var(--line); border-radius: var(--r-card);
+    padding: 12px 14px; font-family: inherit; font-size: 14px; line-height: 1.6;
+    background: var(--canvas); color: var(--text); resize: vertical;
+  }
+  .review-submit-btn {
+    width: 100%; padding: 15px; background: var(--nhn-black); color: #fff;
+    border: none; border-radius: var(--r-pill); font-size: 15px; font-weight: 800;
+    letter-spacing: -0.02em; cursor: pointer; transition: opacity 120ms;
+  }
+  .review-submit-btn:hover { opacity: 0.85; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--nhn-black); color: #fff; padding: 11px 22px; border-radius: var(--r-pill);
+    font-size: 13px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;
+    opacity: 0; transition: opacity 0.22s; pointer-events: none; z-index: 999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -208,7 +280,7 @@
 
   <div class="hero">
     <div class="hero-eyebrow">단골UP 현장 테스트</div>
-    <h1>점심 먹으러 간 김에,<br>단골UP도 테스트하고 오세요</h1>
+    <h1>오늘 점심,<br>단골UP으로 주문해보세요</h1>
   </div>
 
   <div class="tabbar">
@@ -232,6 +304,7 @@
           <div class="store-name">92소 명품한우 <span style="font-weight:500;color:var(--caption);">(에이스하이엔드지점)</span></div>
           <div class="store-menu">육회비빔밥 · 국밥</div>
           <div class="store-loc">📍 에이스하이앤드타워1차 스타벅스 옆 (정문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -240,6 +313,7 @@
           <div class="store-name">군산아구찜</div>
           <div class="store-menu">복해장국 · 생대구탕</div>
           <div class="store-loc">📍 한화비즈메트로 1차 B102호 (정문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -248,6 +322,7 @@
           <div class="store-name">명동 할머니국수</div>
           <div class="store-menu">비빔국수 · 잔치국수</div>
           <div class="store-loc">📍 코오롱싸이언스밸리2차 지하1층 (후문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -256,6 +331,7 @@
           <div class="store-name">스시월 <span style="font-weight:500;color:var(--caption);">(구로점)</span></div>
           <div class="store-menu">초밥</div>
           <div class="store-loc">📍 디지털로26길 90 1층 (후문 방향)</div>
+          <div class="store-usage limited">🛍️ 픽업만 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-none">미사용</span></div>
       </div>
@@ -264,6 +340,7 @@
           <div class="store-name">이치돈부리 <span style="font-weight:500;color:var(--caption);">(구로디지털점)</span></div>
           <div class="store-menu">사케동 · 카츠동</div>
           <div class="store-loc">📍 디지털로26길 111 1층</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -272,6 +349,7 @@
           <div class="store-name">육지로</div>
           <div class="store-menu">육개장 · 감자탕</div>
           <div class="store-loc">📍 디지털로 288 지1층 B113-2호</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -280,6 +358,7 @@
           <div class="store-name">천하제육</div>
           <div class="store-menu">제육+찌개 세트</div>
           <div class="store-loc">📍 디지털로 288</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -288,6 +367,7 @@
           <div class="store-name">영향</div>
           <div class="store-menu">파스타</div>
           <div class="store-loc">📍 남부순환로108길 7 1층<span class="store-walk">🚶 도보 15~20분</span></div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -300,6 +380,7 @@
           <div class="store-name">박가부대 <span style="font-weight:500;color:var(--caption);">(구로에이스하이엔드 2차점)</span></div>
           <div class="store-menu">닭갈비 · 부대찌개</div>
           <div class="store-loc">📍 정문 방향 길건너 건물 1층</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -311,6 +392,7 @@
           <div class="store-name">청년다방 <span style="font-weight:500;color:var(--caption);">(구로지하이시티점)</span></div>
           <div class="store-menu">떡볶이</div>
           <div class="store-loc">📍 디지털로 243</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-none">미사용</span>
@@ -325,6 +407,7 @@
         <div class="store-info">
           <div class="store-name">코멧</div>
           <div class="store-loc">📍 구로동 826-1 대로변 1층 (후문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-stamp">스탬프</span>
@@ -335,6 +418,7 @@
         <div class="store-info">
           <div class="store-name">코앤커피</div>
           <div class="store-loc">📍 에이스하이앤드타워1차 구내식당 옆 (정문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-stamp">스탬프</span>
@@ -345,6 +429,7 @@
         <div class="store-info">
           <div class="store-name">우지커피 <span style="font-weight:500;color:var(--caption);">(구로한신점)</span></div>
           <div class="store-loc">📍 디지털로 272 1층 (후문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-stamp">스탬프</span>
@@ -359,6 +444,7 @@
         <div class="store-info">
           <div class="store-name">텐퍼센트커피 <span style="font-weight:500;color:var(--caption);">(구로하이엔드타워 2차점)</span></div>
           <div class="store-loc">📍 정문 방향 길건너 건물 1층</div>
+          <div class="store-usage limited">🛍️ 픽업만 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -382,6 +468,7 @@
           <div class="store-name">금가네장터</div>
           <div class="store-menu">순대국</div>
           <div class="store-loc">📍 디지털로 242</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-point">포인트</span></div>
       </div>
@@ -390,6 +477,7 @@
           <div class="store-name">포27 <span style="font-weight:500;color:var(--caption);">(Pho27)</span></div>
           <div class="store-menu">쌀국수</div>
           <div class="store-loc">📍 디지털로27길 52</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags"><span class="badge badge-none">미사용</span></div>
       </div>
@@ -402,6 +490,7 @@
           <div class="store-name">7번가피자 <span style="font-weight:500;color:var(--caption);">(구로가산디지털단지점)</span></div>
           <div class="store-menu">피자</div>
           <div class="store-loc">📍 디지털로 238</div>
+          <div class="store-usage limited">🛍️ 픽업만 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-none">미사용</span>
@@ -413,6 +502,7 @@
           <div class="store-name">도란도란훠거</div>
           <div class="store-menu">훠거</div>
           <div class="store-loc">📍 시흥대로153길 75 (가산동)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -424,6 +514,7 @@
           <div class="store-name">명품임실치즈피자 <span style="font-weight:500;color:var(--caption);">(구로본점)</span></div>
           <div class="store-menu">피자</div>
           <div class="store-loc">📍 가산초등학교 건너편</div>
+          <div class="store-usage limited">🛍️ 픽업만 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -438,6 +529,7 @@
         <div class="store-info">
           <div class="store-name">구디 빙수</div>
           <div class="store-loc">📍 디지털로32가길 9</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -452,6 +544,7 @@
         <div class="store-info">
           <div class="store-name">커피 마마퀸</div>
           <div class="store-loc">📍 한화비즈메트로 1차 1층 (정문 방향)</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -462,6 +555,7 @@
         <div class="store-info">
           <div class="store-name">그릭밀</div>
           <div class="store-loc">📍 디지털로32가길 1</div>
+          <div class="store-usage full">🛍️🍽️ 픽업 · 현장취식 가능</div>
         </div>
         <div class="store-tags">
           <span class="badge badge-point">포인트</span>
@@ -527,15 +621,214 @@
     </div>
   </div>
 
+  <div id="tab-review" class="tab-panel">
+    <div class="review-header">
+      <button class="review-back-btn" onclick="closeReviewPanel()">&#8249;</button>
+      <div class="review-header-title">후기 남기기</div>
+    </div>
+    <div class="review-body">
+
+      <div>
+        <div class="review-field-label">오늘 이용한 방식을 모두 선택해주세요 (복수 선택)</div>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="r_order_type" value="앱 주문(픽업)"><span>앱 주문(픽업)</span></label>
+          <label class="check-opt"><input type="checkbox" name="r_order_type" value="앱 주문(현장취식)"><span>앱 주문(현장취식)</span></label>
+          <label class="check-opt"><input type="checkbox" name="r_order_type" value="현장 취식(수기 적립)"><span>현장 취식(수기 적립)</span></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="review-field-label">멤버십 혜택 중 실제로 이용한 것을 모두 선택해주세요 (복수 선택)</div>
+        <div class="check-group">
+          <label class="check-opt"><input type="checkbox" name="r_benefit_used" value="포인트 적립"><span>포인트 적립</span></label>
+          <label class="check-opt"><input type="checkbox" name="r_benefit_used" value="스탬프 적립"><span>스탬프 적립</span></label>
+          <label class="check-opt"><input type="checkbox" name="r_benefit_used" value="쿠폰 사용"><span>쿠폰 사용</span></label>
+          <label class="check-opt"><input type="checkbox" name="r_benefit_used" value="이용 안 함"><span>이용 안 함 (해당 없음)</span></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="review-field-label">이용 과정이 쉽고 직관적이었나요?</div>
+        <div class="scale-row">
+          <button type="button" class="scale-btn" data-group="q3" data-val="1" onclick="selectScale('q3',1)">1</button>
+          <button type="button" class="scale-btn" data-group="q3" data-val="2" onclick="selectScale('q3',2)">2</button>
+          <button type="button" class="scale-btn" data-group="q3" data-val="3" onclick="selectScale('q3',3)">3</button>
+          <button type="button" class="scale-btn" data-group="q3" data-val="4" onclick="selectScale('q3',4)">4</button>
+          <button type="button" class="scale-btn" data-group="q3" data-val="5" onclick="selectScale('q3',5)">5</button>
+        </div>
+        <div class="scale-labels"><span>매우 불편</span><span>매우 편리</span></div>
+      </div>
+
+      <div>
+        <div class="review-field-label">멤버십 혜택이 재방문 의향에 영향을 주나요?</div>
+        <div class="scale-row">
+          <button type="button" class="scale-btn" data-group="revisit" data-val="1" onclick="selectScale('revisit',1)">1</button>
+          <button type="button" class="scale-btn" data-group="revisit" data-val="2" onclick="selectScale('revisit',2)">2</button>
+          <button type="button" class="scale-btn" data-group="revisit" data-val="3" onclick="selectScale('revisit',3)">3</button>
+          <button type="button" class="scale-btn" data-group="revisit" data-val="4" onclick="selectScale('revisit',4)">4</button>
+          <button type="button" class="scale-btn" data-group="revisit" data-val="5" onclick="selectScale('revisit',5)">5</button>
+        </div>
+        <div class="scale-labels"><span>전혀 아님</span><span>매우 그렇다</span></div>
+      </div>
+
+      <div>
+        <div class="review-field-label">저녁·주말에도 이용할 것 같나요?</div>
+        <div class="scale-row">
+          <button type="button" class="scale-btn" data-group="offpeak" data-val="1" onclick="selectScale('offpeak',1)">1</button>
+          <button type="button" class="scale-btn" data-group="offpeak" data-val="2" onclick="selectScale('offpeak',2)">2</button>
+          <button type="button" class="scale-btn" data-group="offpeak" data-val="3" onclick="selectScale('offpeak',3)">3</button>
+          <button type="button" class="scale-btn" data-group="offpeak" data-val="4" onclick="selectScale('offpeak',4)">4</button>
+          <button type="button" class="scale-btn" data-group="offpeak" data-val="5" onclick="selectScale('offpeak',5)">5</button>
+        </div>
+        <div class="scale-labels"><span>전혀 없음</span><span>매우 있음</span></div>
+      </div>
+
+      <div>
+        <div class="review-field-label">주변에 추천할 의향이 있나요?</div>
+        <div class="scale-row">
+          <button type="button" class="scale-btn" data-group="nps" data-val="0" onclick="selectScale('nps',0)">0</button>
+          <button type="button" class="scale-btn" data-group="nps" data-val="1" onclick="selectScale('nps',1)">1</button>
+          <button type="button" class="scale-btn" data-group="nps" data-val="2" onclick="selectScale('nps',2)">2</button>
+          <button type="button" class="scale-btn" data-group="nps" data-val="3" onclick="selectScale('nps',3)">3</button>
+          <button type="button" class="scale-btn" data-group="nps" data-val="4" onclick="selectScale('nps',4)">4</button>
+          <button type="button" class="scale-btn" data-group="nps" data-val="5" onclick="selectScale('nps',5)">5</button>
+        </div>
+        <div class="scale-labels"><span>전혀 없음</span><span>매우 있음</span></div>
+      </div>
+
+      <div>
+        <div class="review-field-label">일반 고객 입장에서 PAYCO 앱 설치가 진입장벽이 될 것 같나요?</div>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="r_barrier" value="대부분 그냥 깔 것"><span>대부분 그냥 깔 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="r_barrier" value="일부 포기할 것"><span>일부는 귀찮아서 포기할 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="r_barrier" value="상당수 포기할 것"><span>상당수가 포기할 것 같다</span></label>
+          <label class="radio-opt"><input type="radio" name="r_barrier" value="거의 다 포기할 것"><span>거의 다 포기할 것 같다</span></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="review-field-label">쿠폰이 이 매장을 다시 오고 싶게 만들었나요?</div>
+        <div class="radio-group">
+          <label class="radio-opt"><input type="radio" name="r_coupon_revisit" value="그렇다"><span>그렇다 (쿠폰 때문에 다시 올 것 같다)</span></label>
+          <label class="radio-opt"><input type="radio" name="r_coupon_revisit" value="어느 정도"><span>어느 정도 (쿠폰이 플러스 요인이다)</span></label>
+          <label class="radio-opt"><input type="radio" name="r_coupon_revisit" value="별로"><span>별로 (쿠폰이 있어도 재방문엔 영향 없다)</span></label>
+          <label class="radio-opt"><input type="radio" name="r_coupon_revisit" value="해당 없음"><span>쿠폰을 못 봤거나 사용 안 함</span></label>
+        </div>
+      </div>
+
+      <div>
+        <div class="review-field-label">좋았던 점, 개선이 필요한 점, 제안하고 싶은 아이디어를 자유롭게 적어주세요</div>
+        <textarea id="r_q13" class="review-textarea" placeholder="자유롭게 적어주세요"></textarea>
+      </div>
+
+      <button type="button" class="review-submit-btn" onclick="submitReview()">후기 제출하기</button>
+    </div>
+  </div>
+
 </div>
 
+<button type="button" class="review-fab" id="reviewFab" onclick="openReviewPanel()">💬 후기 남기기</button>
+
+<div class="toast" id="toast"></div>
+
 <script>
+  let lastTab = 'list';
   function switchTab(id) {
+    lastTab = id;
     document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + id).classList.add('active');
     document.querySelector('.tab-btn[data-tab="' + id + '"]').classList.add('active');
   }
+
+  function openReviewPanel() {
+    document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-review').classList.add('active');
+    document.getElementById('reviewFab').classList.add('hidden');
+    window.scrollTo(0, 0);
+  }
+  function closeReviewPanel() {
+    switchTab(lastTab);
+    document.getElementById('reviewFab').classList.remove('hidden');
+  }
+
+  function selectScale(group, val) {
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(b =>
+      b.classList.toggle('selected', parseInt(b.dataset.val, 10) === val));
+  }
+  function getScale(group) {
+    const b = document.querySelector(`[data-group="${group}"].selected`);
+    return b ? b.dataset.val : '';
+  }
+  function getChecked(name) {
+    return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+  }
+  function getRadio(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : '';
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function resetReviewForm() {
+    document.querySelectorAll('#tab-review input[type="checkbox"], #tab-review input[type="radio"]').forEach(el => el.checked = false);
+    document.querySelectorAll('#tab-review .scale-btn.selected').forEach(el => el.classList.remove('selected'));
+    document.getElementById('r_q13').value = '';
+  }
+
+  function submitReview() {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const survey = {
+      type: 'user',
+      ts: today.toLocaleString('ko-KR'),
+      order_type: getChecked('r_order_type'),
+      benefit_used: getChecked('r_benefit_used'),
+      q3: getScale('q3'),
+      revisit: getScale('revisit'),
+      offpeak: getScale('offpeak'),
+      nps: getScale('nps'),
+      barrier: getRadio('r_barrier'),
+      coupon_revisit: getRadio('r_coupon_revisit'),
+      q13: document.getElementById('r_q13').value,
+    };
+    const payload = {
+      store: '런치가이드 후기',
+      team: '미입력',
+      ts: today.toLocaleString('ko-KR'),
+      scenarios: {},
+      survey,
+    };
+
+    db.ref(`results/${todayStr}/런치가이드후기`).push(payload)
+      .then(() => {
+        showToast('후기가 제출됐어요! 감사합니다 🙏');
+        resetReviewForm();
+        setTimeout(() => closeReviewPanel(), 1000);
+      })
+      .catch(() => {
+        showToast('제출 실패. 다시 시도해주세요.');
+      });
+  }
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBc1cFRmGoBldG0CcqI1TmxbYjU3Eh5oc4",
+    authDomain: "dangolup-test.firebaseapp.com",
+    databaseURL: "https://dangolup-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "dangolup-test",
+    storageBucket: "dangolup-test.firebasestorage.app",
+    messagingSenderId: "380825764626",
+    appId: "1:380825764626:web:7a2453f0390a87363069cb"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 </script>
 </body>
 </html>
