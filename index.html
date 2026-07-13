@@ -1051,6 +1051,15 @@ const STORES = [
   { id:"M13", name:"명품임실치즈피자",                   type:"식당", membership:"point", orderType:"pickup", location:"가산초등학교 건너편", webUrl:"" },
   { id:"M14", name:"명동 할머니국수",                    type:"식당", membership:"point", orderType:"pickup", sikwon:true,  location:"후문 방향 사거리 코오롱싸이언스밸리2차 지하1층", webUrl:"" },
   { id:"M15", name:"커피마마퀸",                         type:"카페", membership:"point", orderType:"pickup", location:"정문 방향 한화비즈메트로 1차 1층", webUrl:"" },
+  { id:"M16", name:"육지로",                             type:"식당", membership:"point", orderType:"pickup", sikwon:true, location:"서울 구로구 디지털로 288 지1층 B113-2호", webUrl:"" },
+  { id:"M17", name:"천하제육",                           type:"식당", membership:"point", orderType:"pickup", sikwon:true, location:"서울특별시 구로구 디지털로 288 (구로동)", webUrl:"" },
+  { id:"M18", name:"청년다방(구로지하이시티점)",         type:"식당", membership:"none",  orderType:"pickup", sikwon:true, location:"서울특별시 구로구 디지털로 243 (구로동)", webUrl:"" },
+  { id:"M19", name:"금가네장터",                         type:"식당", membership:"point", orderType:"pickup", location:"서울특별시 구로구 디지털로 242 (구로동)", webUrl:"" },
+  { id:"M20", name:"그릭밀",                             type:"카페", membership:"point", orderType:"pickup", location:"서울특별시 구로구 디지털로32가길 1 (구로동)", webUrl:"" },
+  { id:"M21", name:"구디 빙수",                          type:"카페", membership:"point", orderType:"pickup", location:"서울특별시 구로구 디지털로32가길 9 (구로동)", webUrl:"" },
+  { id:"M22", name:"도란도란훠거",                       type:"식당", membership:"point", orderType:"pickup", location:"서울특별시 금천구 시흥대로153길 75 (가산동)", webUrl:"" },
+  { id:"M23", name:"포27(Pho27)",                        type:"식당", membership:"none",  orderType:"pickup", location:"서울특별시 구로구 디지털로27길 52 (구로동)", webUrl:"" },
+  { id:"M24", name:"7번가피자(구로가산디지털단지점)",    type:"식당", membership:"none",  orderType:"both",    location:"서울특별시 구로구 디지털로 238 (가리봉동)", webUrl:"" },
 ];
 
 // ══════════════════════════════════════════════
@@ -2355,11 +2364,27 @@ function buildAnalysisPrompt(resultData, allSubmissions) {
   const withSurvey = allSubmissions.filter(d => d.survey);
   const n = withSurvey.length;
 
-  // 시나리오 ID → 이름 맵 (모든 가맹점 시나리오 풀)
-  const scenarioNameMap = {};
-  try {
-    buildScenarios(null, true).forEach(s => { scenarioNameMap[s.id] = `${s.cat} > ${s.name}`; });
-  } catch(e) {}
+  // 시나리오 ID → 이름 맵
+  const scenarioNameMap = {
+    'P1':   '결제 > PAYCO 결제',
+    'P2':   '결제 > 신용/체크카드 결제',
+    'D1':   '단골맺기 > PAYCO 앱으로 단골 맺기',
+    'D2':   '단골맺기 > 현장 멤버십 웹으로 단골 맺기',
+    'O1':   '주문 > 픽업 주문',
+    'O2-1': '주문 > 앱 주문 후 현장 취식 (일괄 결제)',
+    'O2-2': '주문 > 앱 주문 후 현장 취식 (더치페이)',
+    'O3':   '주문 > 배달 주문',
+    'O4':   '주문 > 앱 미사용 현장 취식 확인',
+    'M1':   '멤버십 > 앱 자동 적립',
+    'M2':   '멤버십 > 포스 수기 적립',
+    'M3':   '멤버십 > 스탬프 완성 → 리워드 쿠폰 발급',
+    'M5':   '멤버십 > 멤버십 미사용 — 적립 UI 미노출 확인',
+    'C1':   '쿠폰 > 쿠폰 사용 (앱)',
+    'C2':   '쿠폰 > 쿠폰 사용 (모바일 웹)',
+    'C3':   '쿠폰 > 쿠폰 UI 미노출 확인',
+    'H1':   '이용내역 > 앱에서 주문 내역 확인',
+    'H2':   '이용내역 > 웹에서 이용 내역 확인',
+  };
 
   // 시나리오 통과율 집계
   const scenarioStats = {};
@@ -2933,6 +2958,15 @@ const SLOTS = [
   { id:'S16', store:'명품임실치즈피자',                  location:'가산초등학교 건너편', type:'식당' },
   { id:'S17', store:'명동 할머니국수',                   location:'후문 방향 사거리 코오롱싸이언스밸리2차 지하1층', type:'식당' },
   { id:'S18', store:'커피마마퀸',                        location:'정문 방향 한화비즈메트로 1차 1층', type:'카페' },
+  { id:'S19', store:'육지로',                            location:'서울 구로구 디지털로 288 지1층 B113-2호', type:'식당' },
+  { id:'S20', store:'천하제육',                          location:'서울특별시 구로구 디지털로 288 (구로동)', type:'식당' },
+  { id:'S21', store:'청년다방(구로지하이시티점)',        location:'서울특별시 구로구 디지털로 243 (구로동)', type:'식당' },
+  { id:'S22', store:'금가네장터',                        location:'서울특별시 구로구 디지털로 242 (구로동)', type:'식당' },
+  { id:'S23', store:'그릭밀',                            location:'서울특별시 구로구 디지털로32가길 1 (구로동)', type:'카페' },
+  { id:'S24', store:'구디 빙수',                         location:'서울특별시 구로구 디지털로32가길 9 (구로동)', type:'카페' },
+  { id:'S25', store:'도란도란훠거',                      location:'서울특별시 금천구 시흥대로153길 75 (가산동)', type:'식당' },
+  { id:'S26', store:'포27(Pho27)',                       location:'서울특별시 구로구 디지털로27길 52 (구로동)', type:'식당' },
+  { id:'S27', store:'7번가피자(구로가산디지털단지점)',   location:'서울특별시 구로구 디지털로 238 (가리봉동)', type:'식당' },
 ];
 
 let selectedSlotId = null;
